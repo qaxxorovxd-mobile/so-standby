@@ -9,7 +9,9 @@ import '../core/clock.dart';
 import '../core/services_scope.dart';
 import '../core/settings.dart';
 import '../core/style.dart';
+import '../services/power.dart';
 import '../widgets/analog_clock.dart';
+import '../widgets/charging_overlay.dart';
 import '../widgets/tiles.dart';
 import 'more_pages.dart';
 import 'pages.dart';
@@ -34,6 +36,14 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
   Timer? _chromeTimer;
   late AppSettings _s;
 
+  // Charging animation
+  static const _batteryPage = 8;
+  StreamSubscription<ChargeEvent>? _powerSub;
+  ChargeEvent? _charge;
+  int? _returnTo; // absolute PageView index to go back to
+  bool _back = false;
+  Timer? _backTimer;
+
   @override
   void initState() {
     super.initState();
@@ -55,7 +65,47 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
       final sv = Services.of(context);
       sv.weather.refresh();
       sv.media.checkAccess();
+      _powerSub = sv.power.events.listen(_onCharge);
     });
+  }
+
+  void _onCharge(ChargeEvent e) {
+    if (!mounted || !_s.chargeAnimation || _charge != null) return;
+    // Close any open sheet/route so the animation is visible.
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    _chromeTimer?.cancel();
+    _backTimer?.cancel();
+    final cur = _pc.hasClients ? (_pc.page ?? _pc.initialPage.toDouble()).round() : _pc.initialPage;
+    final target = cur - (cur % _pageCount) + _batteryPage;
+    _returnTo = cur % _pageCount == _batteryPage ? null : cur;
+    if (_pc.hasClients && cur != target) _pc.jumpToPage(target);
+    setState(() {
+      _chrome = false;
+      _back = false;
+      _charge = e;
+    });
+  }
+
+  void _onChargeDone() {
+    if (!mounted) return;
+    setState(() {
+      _charge = null;
+      _back = _returnTo != null;
+    });
+    if (_back) {
+      _backTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _back = false);
+      });
+    }
+  }
+
+  void _goBack() {
+    final to = _returnTo;
+    _backTimer?.cancel();
+    setState(() => _back = false);
+    if (to == null || !_pc.hasClients) return;
+    HapticFeedback.lightImpact();
+    _pc.animateToPage(to, duration: const Duration(milliseconds: 550), curve: Curves.easeOutCubic);
   }
 
   void _applyWakelock() {
@@ -82,6 +132,8 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     _s.removeListener(_applyWakelock);
     _chromeTimer?.cancel();
+    _backTimer?.cancel();
+    _powerSub?.cancel();
     _pc.dispose();
     super.dispose();
   }
@@ -139,7 +191,7 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
         HapticFeedback.selectionClick();
         setState(() => _page = p);
         s.lastPage = p;
-        _showChrome(const Duration(milliseconds: 1600));
+        if (_charge == null) _showChrome(const Duration(milliseconds: 1600));
       },
       itemBuilder: (context, i) => _pageFor(i % _pageCount),
     );
@@ -154,12 +206,41 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
           onLongPress: _openSettings,
           child: ClockBuilder(builder: (context, now) {
             final night = _isNight(now);
-            Widget content = _BurnInShift(enabled: s.burnIn, minute: now.hour * 60 + now.minute, child: pages);
+            Widget content = Stack(children: [
+              Positioned.fill(child: _BurnInShift(enabled: s.burnIn, minute: now.hour * 60 + now.minute, child: pages)),
+              if (_charge != null)
+                Positioned.fill(
+                  child: ChargingOverlay(key: ObjectKey(_charge), event: _charge!, onDone: _onChargeDone),
+                ),
+            ]);
             if (night) {
               content = ColorFiltered(colorFilter: _nightFilter, child: content);
             }
             return Stack(children: [
               Positioned.fill(child: content),
+              // "Back" pill after the charging animation (visible for 3 s)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: SafeArea(
+                  child: Center(
+                    child: IgnorePointer(
+                      ignoring: !_back,
+                      child: AnimatedSlide(
+                        offset: _back ? Offset.zero : const Offset(-1.2, 0),
+                        duration: const Duration(milliseconds: 450),
+                        curve: Curves.easeOutBack,
+                        child: AnimatedOpacity(
+                          opacity: _back ? 1 : 0,
+                          duration: const Duration(milliseconds: 300),
+                          child: _BackPill(onTap: _goBack, color: night ? Palette.red : Palette.label),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               // Page dots
               Positioned(
                 left: 0,
@@ -299,6 +380,31 @@ class _RoundButton extends StatelessWidget {
           height: 44,
           decoration: BoxDecoration(color: Palette.card.withValues(alpha: 0.9), shape: BoxShape.circle),
           child: Icon(icon, size: 22, color: color),
+        ),
+      );
+}
+
+class _BackPill extends StatelessWidget {
+  const _BackPill({required this.onTap, required this.color});
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.only(left: 14),
+          padding: const EdgeInsets.fromLTRB(12, 12, 18, 12),
+          decoration: BoxDecoration(
+            color: const Color(0xE62C2C2E),
+            borderRadius: BorderRadius.circular(100),
+            boxShadow: const [BoxShadow(color: Color(0x80000000), blurRadius: 20)],
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(CupertinoIcons.chevron_back, size: 20, color: color),
+            const SizedBox(width: 4),
+            Text('Back', style: sf(17, weight: FontWeight.w700, color: color)),
+          ]),
         ),
       );
 }

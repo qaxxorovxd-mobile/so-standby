@@ -57,6 +57,9 @@ class AppSettings extends ChangeNotifier {
   bool get keepAwake => _p.getBool('keepAwake') ?? true;
   set keepAwake(bool v) => _set('keepAwake', v);
 
+  bool get chargeAnimation => _p.getBool('chargeAnim') ?? true;
+  set chargeAnimation(bool v) => _set('chargeAnim', v);
+
   bool get burnIn => _p.getBool('burnIn') ?? true;
   set burnIn(bool v) => _set('burnIn', v);
 

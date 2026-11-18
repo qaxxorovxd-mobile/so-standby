@@ -1,10 +1,13 @@
 package uz.so.so_standby
 
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.media.MediaMetadata
+import android.os.BatteryManager
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
@@ -15,6 +18,7 @@ import android.provider.Settings
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 
@@ -29,8 +33,51 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private var powerReceiver: BroadcastReceiver? = null
+
+    @Suppress("DEPRECATION")
+    private fun displayRotation(): Int = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) display?.rotation ?: 0
+        else windowManager.defaultDisplay.rotation
+    } catch (e: Exception) { 0 }
+
+    override fun onDestroy() {
+        powerReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
+        powerReceiver = null
+        super.onDestroy()
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Power events: plug type (0 none, 1 AC, 2 USB, 4 wireless, 8 dock), level, display rotation.
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, "so_standby/power").setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                    var lastPlugged = -1
+                    var lastLevel = -1
+                    val r = object : BroadcastReceiver() {
+                        override fun onReceive(ctx: Context, intent: Intent) {
+                            val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)
+                            val lvl = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                            val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
+                            val level = if (lvl >= 0 && scale > 0) lvl * 100 / scale else -1
+                            if (plugged == lastPlugged && level == lastLevel) return
+                            lastPlugged = plugged
+                            lastLevel = level
+                            events.success(mapOf("plugged" to plugged, "level" to level, "rotation" to displayRotation()))
+                        }
+                    }
+                    powerReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
+                    powerReceiver = r
+                    registerReceiver(r, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    powerReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
+                    powerReceiver = null
+                }
+            }
+        )
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName).setMethodCallHandler { call, result ->
             try {
                 when (call.method) {

@@ -9,6 +9,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/standby_screen.dart';
 import 'services/battery.dart';
 import 'services/media.dart';
+import 'services/power.dart';
 import 'services/weather.dart';
 
 Future<void> main() async {
@@ -25,16 +26,18 @@ Future<void> main() async {
     weather: WeatherService(settings),
     media: MediaService(),
     battery: BatteryService(),
+    power: PowerService(),
   ));
 }
 
 class SoStandByApp extends StatelessWidget {
-  const SoStandByApp({super.key, required this.settings, required this.weather, required this.media, required this.battery});
+  const SoStandByApp({super.key, required this.settings, required this.weather, required this.media, required this.battery, required this.power});
 
   final AppSettings settings;
   final WeatherService weather;
   final MediaService media;
   final BatteryService battery;
+  final PowerService power;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +47,7 @@ class SoStandByApp extends StatelessWidget {
         weather: weather,
         media: media,
         battery: battery,
+        power: power,
         child: MaterialApp(
           title: 'So StandBy',
           debugShowCheckedModeBanner: false,

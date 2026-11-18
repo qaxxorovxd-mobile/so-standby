@@ -32,6 +32,21 @@
 - **Keep screen on.** Optional, controlled by a setting.
 - **Personalization.** 11 accent colors, 12/24‑hour time, °C/°F, and a smooth sweeping second hand.
 
+### ⚡ Charging animation
+
+When you plug in while the app is open, So StandBy jumps straight to the **Batteries** stand and plays a charging animation:
+
+- **Cable (USB‑C):** an energy stream with particles flies in from the edge where the port is. The app reads the screen rotation to find that edge: bottom in portrait, left or right in landscape. The stream plugs into the battery ring and fills it to your charge level.
+- **Wireless:** a shimmering MagSafe‑style ring blooms from the center, then settles into the battery ring.
+
+After the animation, a **‹ Back** button slides in on the left edge for 3 seconds and takes you back to the page you were on.
+You can preview both animations, or turn the feature off, in **Settings → Charging**.
+
+<p align="center">
+  <img src="docs/screenshots/charging-cable.jpg" width="49%" />
+  <img src="docs/screenshots/charging-wireless.jpg" width="49%" />
+</p>
+
 ### Pages (swipe sideways)
 
 | # | Page | # | Page |
@@ -98,11 +113,11 @@ Built with Flutter 3.50 / Dart 3.14.
 ```
 lib/
   core/        settings, l10n strings, clock ticker, text styles
-  services/    weather (Open‑Meteo), media (MethodChannel), battery
-  widgets/     analog clock painter, weather/date/calendar tiles, media card
+  services/    weather (Open‑Meteo), media (MethodChannel), battery, power (EventChannel)
+  widgets/     analog clock painter, tiles, media card, charging animation overlay
   screens/     onboarding, StandBy pager, pages, clock styles, settings sheet
 android/app/src/main/kotlin/…
-  MainActivity.kt          media session bridge (now playing + transport controls)
+  MainActivity.kt          media session bridge + power events (plug type, display rotation)
   MediaListenerService.kt  notification listener that unlocks media sessions
 ```
 

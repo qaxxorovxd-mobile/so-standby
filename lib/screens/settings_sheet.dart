@@ -4,6 +4,8 @@ import 'package:material_ui/material_ui.dart' show showModalBottomSheet;
 
 import '../core/settings.dart';
 import '../core/style.dart';
+import '../core/services_scope.dart';
+import '../services/power.dart';
 import '../services/weather.dart';
 import 'onboarding_screen.dart';
 
@@ -16,6 +18,16 @@ Future<void> showSettingsSheet(BuildContext context) {
     barrierColor: const Color(0x99000000),
     builder: (_) => const _SettingsSheet(),
   );
+}
+
+void _preview(BuildContext context, ChargeKind kind) {
+  final size = MediaQuery.of(context).size;
+  final power = Services.of(context).power;
+  final level = Services.of(context).battery.level;
+  Navigator.of(context).pop();
+  Future.delayed(const Duration(milliseconds: 350), () {
+    power.simulate(kind, landscape: size.width > size.height, level: level < 0 ? null : level);
+  });
 }
 
 class _SettingsSheet extends StatelessWidget {
@@ -78,6 +90,16 @@ class _SettingsSheet extends StatelessWidget {
                     ),
                     const _CityRow(),
                   ]),
+                  _Group(
+                    title: 'Charging',
+                    footer: 'When you plug in, So StandBy jumps to Batteries and plays an animation. '
+                        'With a cable it flies in from the USB-C port side; with wireless charging it starts in the center.',
+                    children: [
+                      _SwitchRow(label: 'Charging Animation', value: s.chargeAnimation, onChanged: (v) => s.chargeAnimation = v),
+                      _NavRow(label: 'Preview: Cable (USB-C)', onTap: () => _preview(context, ChargeKind.wired)),
+                      _NavRow(label: 'Preview: Wireless', onTap: () => _preview(context, ChargeKind.wireless)),
+                    ],
+                  ),
                   _Group(title: t.display, footer: t.burnInFooter, children: [
                     _SwitchRow(label: t.keepAwake, value: s.keepAwake, onChanged: (v) => s.keepAwake = v),
                     _SwitchRow(label: t.burnIn, value: s.burnIn, onChanged: (v) => s.burnIn = v),
@@ -91,7 +113,7 @@ class _SettingsSheet extends StatelessWidget {
                     ),
                   ]),
                   const SizedBox(height: 12),
-                  Center(child: Text('So StandBy · 1.0.0', style: sf(13, weight: FontWeight.w600, color: Palette.tertiary))),
+                  Center(child: Text('So StandBy · 1.2.0', style: sf(13, weight: FontWeight.w600, color: Palette.tertiary))),
                 ],
               ),
             ),
