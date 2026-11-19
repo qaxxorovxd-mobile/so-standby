@@ -140,21 +140,42 @@ class WeatherService extends ChangeNotifier {
         lon = settings.manualLon!;
         city = settings.manualCity!;
       } else {
+        // Never prompt from here: no permission request and no "turn on location" dialog.
+        // Prompting on every refresh/resume made Android ask again and again.
         final perm = await Geolocator.checkPermission();
-        if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
-          if (data == null) status = WeatherStatus.noPermission;
+        final granted = perm == LocationPermission.always || perm == LocationPermission.whileInUse;
+        Position? pos;
+        if (granted) {
+          try {
+            pos = await Geolocator.getLastKnownPosition();
+          } catch (_) {}
+          final serviceOn = await Geolocator.isLocationServiceEnabled().catchError((_) => false);
+          if (serviceOn) {
+            try {
+              pos = await Geolocator.getCurrentPosition(
+                // LocationManager never shows the Play Services "enable location" resolution dialog.
+                locationSettings: AndroidSettings(
+                  accuracy: LocationAccuracy.low,
+                  forceLocationManager: true,
+                  timeLimit: const Duration(seconds: 12),
+                ),
+              );
+            } catch (_) {}
+          }
+        }
+        final saved = _savedLocation();
+        if (pos != null) {
+          lat = pos.latitude;
+          lon = pos.longitude;
+          city = await _cityName(lat, lon) ?? (saved?.$3 ?? data?.city ?? '');
+          _saveLocation(lat, lon, city);
+        } else if (saved != null) {
+          // Location is off or unavailable: use the last place we successfully located.
+          (lat, lon, city) = saved;
+        } else {
+          if (data == null) status = granted ? WeatherStatus.error : WeatherStatus.noPermission;
           return;
         }
-        Position? pos = await Geolocator.getLastKnownPosition();
-        try {
-          pos = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 12)),
-          );
-        } catch (_) {}
-        if (pos == null) throw Exception('no position');
-        lat = pos.latitude;
-        lon = pos.longitude;
-        city = await _cityName(lat, lon) ?? data?.city ?? '';
       }
       data = await _fetch(lat, lon, city);
       status = WeatherStatus.ready;
@@ -165,6 +186,22 @@ class WeatherService extends ChangeNotifier {
       _busy = false;
       notifyListeners();
     }
+  }
+
+  /// Last successfully resolved device location (lat, lon, city), persisted across launches.
+  (double, double, String)? _savedLocation() {
+    final raw = settings.getString('lastLocation');
+    if (raw == null) return null;
+    try {
+      final j = jsonDecode(raw) as Map<String, dynamic>;
+      return ((j['lat'] as num).toDouble(), (j['lon'] as num).toDouble(), (j['city'] as String?) ?? '');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _saveLocation(double lat, double lon, String city) {
+    settings.setString('lastLocation', jsonEncode({'lat': lat, 'lon': lon, 'city': city}));
   }
 
   Future<String?> _cityName(double lat, double lon) async {

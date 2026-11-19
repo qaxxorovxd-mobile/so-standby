@@ -160,7 +160,7 @@ class _SettingsSheet extends StatelessWidget {
                       const SizedBox(height: 12),
                       Center(
                         child: Text(
-                          'So StandBy · 1.3.0',
+                          'So StandBy · 1.3.1',
                           style: sf(13, weight: FontWeight.w600, color: Palette.tertiary),
                         ),
                       ),
