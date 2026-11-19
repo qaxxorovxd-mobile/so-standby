@@ -1,545 +1,657 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>So StandBy — StandBy mode for Android</title>
-  <meta name="description" content="So StandBy turns your Android phone into a beautiful iOS‑style StandBy display: 23 clock, weather, calendar and media views, a charging animation, Night Mode and more." />
-  <meta name="theme-color" content="#000000" />
-  <meta property="og:title" content="So StandBy — StandBy mode for Android" />
-  <meta property="og:description" content="23 iOS‑style StandBy views for your Android phone. Free and open source." />
-  <meta property="og:image" content="https://qaxxorovxd-mobile.github.io/so-standby/assets/shots/analog-weather.jpg" />
-  <meta property="og:type" content="website" />
-  <link rel="icon" type="image/png" href="assets/icon.png" />
-  <link rel="apple-touch-icon" href="assets/icon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #000;
-      --card: #111113;
-      --card-2: #1c1c1e;
-      --line: rgba(255, 255, 255, 0.09);
-      --text: #f5f5f7;
-      --muted: #8e8e93;
-      --orange: #ff9f0a;
-      --green: #30d158;
-      --blue: #0a84ff;
-      --red: #ff453a;
-      --radius: 28px;
-      --max: 1120px;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
-      font-feature-settings: "tnum" 0;
-      -webkit-font-smoothing: antialiased;
-      line-height: 1.5;
-      overflow-x: hidden;
-    }
-    a { color: inherit; text-decoration: none; }
-    img { display: block; max-width: 100%; }
-    .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
-
-    /* ── Nav ─────────────────────────────── */
-    nav {
-      position: sticky; top: 0; z-index: 50;
-      backdrop-filter: saturate(180%) blur(20px);
-      -webkit-backdrop-filter: saturate(180%) blur(20px);
-      background: rgba(0, 0, 0, 0.72);
-      border-bottom: 1px solid var(--line);
-    }
-    nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; }
-    .brand img { width: 28px; height: 28px; border-radius: 7px; }
-    .nav-links { display: flex; align-items: center; gap: 26px; font-size: 14px; color: #d1d1d6; }
-    .nav-links a:hover { color: #fff; }
-    .nav-cta {
-      background: #fff; color: #000 !important; font-weight: 600;
-      padding: 7px 14px; border-radius: 100px;
-    }
-    @media (max-width: 720px) { .nav-links .hide-sm { display: none; } }
-
-    /* ── Hero ────────────────────────────── */
-    .hero { position: relative; padding: 80px 0 40px; text-align: center; overflow: hidden; }
-    .hero::before {
-      content: ""; position: absolute; inset: -20% -10% auto; height: 620px; z-index: -1;
-      background:
-        radial-gradient(40% 50% at 30% 30%, rgba(255, 159, 10, 0.22), transparent 70%),
-        radial-gradient(35% 45% at 72% 35%, rgba(48, 209, 88, 0.16), transparent 70%),
-        radial-gradient(40% 50% at 50% 80%, rgba(10, 132, 255, 0.14), transparent 70%);
-      filter: blur(20px);
-    }
-    .app-icon {
-      width: 104px; height: 104px; margin: 0 auto 26px; border-radius: 24px;
-      box-shadow: 0 20px 60px rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.06);
-    }
-    .eyebrow {
-      display: inline-flex; align-items: center; gap: 8px;
-      font-size: 13px; font-weight: 600; color: var(--orange);
-      background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.25);
-      padding: 6px 12px; border-radius: 100px; margin-bottom: 22px;
-    }
-    h1 {
-      font-size: clamp(44px, 8vw, 96px); font-weight: 800; letter-spacing: -0.045em; line-height: 0.98;
-    }
-    h1 .grad {
-      background: linear-gradient(120deg, #ffd60a 0%, #ff9f0a 45%, #ff453a 100%);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-    }
-    .lead { max-width: 640px; margin: 22px auto 0; font-size: clamp(17px, 2.2vw, 21px); color: #a1a1a6; font-weight: 500; }
-    .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 15px 26px; border-radius: 100px; font-weight: 700; font-size: 16px;
-      transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn-primary { background: #fff; color: #000; box-shadow: 0 10px 40px rgba(255, 255, 255, 0.15); }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 50px rgba(255, 255, 255, 0.22); }
-    .btn-ghost { background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--line); }
-    .btn-ghost:hover { background: rgba(255, 255, 255, 0.14); }
-    .btn svg { width: 18px; height: 18px; }
-    .meta { margin-top: 16px; font-size: 13px; color: var(--muted); }
-
-    /* ── Device ──────────────────────────── */
-    .device-stage { margin: 60px auto 0; max-width: 900px; perspective: 1600px; }
-    .device {
-      position: relative; aspect-ratio: 2.16 / 1; border-radius: 52px; padding: 14px;
-      background: linear-gradient(145deg, #3a3a3c, #1c1c1e 40%, #2c2c2e);
-      box-shadow:
-        0 0 0 1.5px #48484a inset,
-        0 60px 120px rgba(0, 0, 0, 0.8),
-        0 0 80px rgba(255, 159, 10, 0.08);
-      transform: rotateX(8deg);
-      transition: transform .8s cubic-bezier(.2, .8, .2, 1);
-    }
-    .device:hover { transform: rotateX(0deg); }
-    .screen { position: relative; width: 100%; height: 100%; border-radius: 40px; overflow: hidden; background: #000; }
-    .screen > * { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease; }
-    .screen > .on { opacity: 1; }
-    .screen img { width: 100%; height: 100%; object-fit: cover; }
-    .island {
-      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-      width: 22px; height: 78px; border-radius: 12px; background: #000; z-index: 3; opacity: 1 !important;
-      box-shadow: 0 0 0 1px #1a1a1a;
-    }
-    .usb {
-      position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
-      width: 6px; height: 46px; border-radius: 0 4px 4px 0; background: #2c2c2e;
-    }
-    /* Live clock slide */
-    .live { display: flex; flex-direction: column; justify-content: space-between; padding: 5% 6%; }
-    .live .top { display: flex; justify-content: space-between; font-weight: 700; color: var(--muted); font-size: clamp(11px, 2vw, 20px); }
-    .live .top .bat { color: var(--green); }
-    .live .time {
-      text-align: center; color: var(--orange); font-weight: 800;
-      font-size: clamp(64px, 17vw, 190px); letter-spacing: -0.04em; line-height: 1;
-      font-feature-settings: "tnum" 1;
-    }
-    .live .bottom { font-weight: 600; font-size: clamp(11px, 2vw, 20px); color: #fff; }
-    .live .bottom span { color: var(--muted); }
-    .dots { display: flex; gap: 7px; justify-content: center; margin-top: 26px; }
-    .dots button {
-      width: 7px; height: 7px; border-radius: 4px; border: 0; background: #3a3a3c; cursor: pointer;
-      transition: width .3s ease, background .3s ease;
-    }
-    .dots button.on { width: 22px; background: #fff; }
-
-    /* ── Sections ────────────────────────── */
-    section { padding: 110px 0 0; }
-    .section-head { text-align: center; max-width: 720px; margin: 0 auto 52px; }
-    .kicker { font-size: 14px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--orange); }
-    h2 { font-size: clamp(34px, 5vw, 56px); font-weight: 800; letter-spacing: -0.035em; line-height: 1.05; margin-top: 10px; }
-    .section-head p { color: #a1a1a6; font-size: 18px; margin-top: 16px; font-weight: 500; }
-
-    /* Stats */
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 70px; }
-    .stat { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px; text-align: left; }
-    .stat b { display: block; font-size: 40px; font-weight: 800; letter-spacing: -0.03em; }
-    .stat span { color: var(--muted); font-size: 14px; font-weight: 600; }
-    @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, 1fr); } }
-
-    /* Feature grid */
-    .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
-    .card {
-      position: relative; background: var(--card); border: 1px solid var(--line);
-      border-radius: var(--radius); padding: 30px; overflow: hidden;
-    }
-    .card h3 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin-top: 16px; }
-    .card p { color: #a1a1a6; margin-top: 8px; font-size: 16px; font-weight: 500; }
-    .card .ic {
-      width: 48px; height: 48px; border-radius: 13px; display: grid; place-items: center; font-size: 24px;
-    }
-    .span-2 { grid-column: span 2; } .span-3 { grid-column: span 3; } .span-4 { grid-column: span 4; }
-    .card .shot { margin: 22px -30px -30px; border-top: 1px solid var(--line); }
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr 1fr; }
-      .span-2, .span-3, .span-4 { grid-column: span 2; }
-      .grid .half { grid-column: span 1; }
-    }
-    @media (max-width: 560px) { .grid .half { grid-column: span 2; } }
-
-    /* Gallery */
-    .gallery {
-      display: grid; grid-auto-flow: column; grid-auto-columns: min(78%, 620px); gap: 18px;
-      overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 20px 24px;
-      scrollbar-width: none;
-    }
-    .gallery::-webkit-scrollbar { display: none; }
-    .gallery figure {
-      scroll-snap-align: center; border-radius: 26px; overflow: hidden;
-      border: 1px solid var(--line); background: #000; box-shadow: 0 30px 60px rgba(0, 0, 0, .6);
-    }
-    .gallery figcaption { padding: 14px 18px; font-weight: 700; font-size: 15px; background: var(--card); display: flex; justify-content: space-between; }
-    .gallery figcaption span { color: var(--muted); font-weight: 600; }
-    .gallery-nav { display: flex; gap: 10px; justify-content: center; }
-    .gallery-nav button {
-      width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line);
-      background: var(--card-2); color: #fff; font-size: 20px; cursor: pointer;
-    }
-    .gallery-nav button:hover { background: #2c2c2e; }
-
-    /* Styles chips */
-    .chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 820px; margin: 0 auto; }
-    .chip {
-      padding: 10px 18px; border-radius: 100px; background: var(--card-2);
-      border: 1px solid var(--line); font-weight: 700; font-size: 15px;
-    }
-    .chip.accent { background: rgba(255, 159, 10, .12); border-color: rgba(255, 159, 10, .35); color: var(--orange); }
-
-    /* Charging */
-    .charge { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .charge .card { padding: 0; }
-    .charge .card .txt { padding: 26px 30px 30px; }
-    .charge img { border-bottom: 1px solid var(--line); }
-    @media (max-width: 760px) { .charge { grid-template-columns: 1fr; } }
-    .pill {
-      display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
-      padding: 5px 10px; border-radius: 100px;
-    }
-
-    /* Steps */
-    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: s; }
-    .step { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
-    .step::before {
-      counter-increment: s; content: counter(s);
-      display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
-      background: #fff; color: #000; font-weight: 800; margin-bottom: 16px;
-    }
-    .step h3 { font-size: 20px; font-weight: 800; }
-    .step p { color: #a1a1a6; margin-top: 6px; font-weight: 500; }
-    @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
-
-    /* Final CTA */
-    .final {
-      margin-top: 110px; text-align: center; padding: 80px 24px; border-radius: 40px;
-      background:
-        radial-gradient(60% 80% at 50% 0%, rgba(255, 159, 10, .25), transparent 70%),
-        var(--card);
-      border: 1px solid var(--line);
-    }
-    .final h2 { margin: 18px 0 0; }
-    .final .app-icon { margin-bottom: 0; }
-
-    footer { padding: 60px 0 50px; color: var(--muted); font-size: 13px; }
-    footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 26px; }
-    footer a:hover { color: #fff; }
-
-    /* Reveal on scroll */
-    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .9s ease, transform .9s cubic-bezier(.2, .8, .2, 1); }
-    .reveal.in { opacity: 1; transform: none; }
-    @media (prefers-reduced-motion: reduce) {
-      .reveal { opacity: 1; transform: none; transition: none; }
-      .device { transform: none; }
-      html { scroll-behavior: auto; }
-    }
-  </style>
-</head>
-<body>
-  <nav>
-    <div class="wrap">
-      <a class="brand" href="#"><img src="assets/icon.png" alt="" />So StandBy</a>
-      <div class="nav-links">
-        <a class="hide-sm" href="#features">Features</a>
-        <a class="hide-sm" href="#gallery">Gallery</a>
-        <a class="hide-sm" href="#charging">Charging</a>
-        <a class="hide-sm" href="https://github.com/qaxxorovxd-mobile/so-standby">GitHub</a>
-        <a class="nav-cta" href="#download">Download</a>
-      </div>
-    </div>
-  </nav>
-
-  <header class="hero">
-    <div class="wrap">
-      <img class="app-icon" src="assets/icon.png" alt="So StandBy app icon" />
-      <div class="eyebrow">⚡ New in <span data-version>1.3.0</span>: glass UI &amp; charging animation</div>
-      <h1>StandBy,<br /><span class="grad">now on Android.</span></h1>
-      <p class="lead">Dock your phone and turn it into a beautiful bedside clock, weather station, calendar and music player. 23 views, all in the style of iOS.</p>
-      <div class="ctas">
-        <a class="btn btn-primary" data-apk href="https://github.com/qaxxorovxd-mobile/so-standby/releases/latest">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-          Download APK
-        </a>
-        <a class="btn btn-ghost" href="https://github.com/qaxxorovxd-mobile/so-standby">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
-          View on GitHub
-        </a>
-      </div>
-      <p class="meta">Free &amp; open source · Android 7.0+ · <span data-size>~50 MB</span></p>
-
-      <div class="device-stage reveal">
-        <div class="device">
-          <div class="usb"></div>
-          <div class="screen" id="screen">
-            <div class="island"></div>
-            <div class="live on" aria-label="Live clock preview">
-              <div class="top"><span id="live-date">Wednesday, November 19</span><span class="bat">⚡ 100%</span></div>
-              <div class="time" id="live-time">9:41</div>
-              <div class="bottom">☁︎ 11° <span>Mostly Cloudy · Tashkent</span></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>So StandBy — A little more calm. A lot more at a glance.</title>
+    <meta
+      name="description"
+      content="Give your Android a beautiful place to rest. So StandBy brings together clocks, weather, your calendar and music in 23 thoughtfully designed views. Free and open source."
+    />
+    <meta name="theme-color" content="#f7f8fc" />
+    <meta
+      property="og:title"
+      content="So StandBy — Your phone. A softer side."
+    />
+    <meta
+      property="og:description"
+      content="A beautiful StandBy display for Android. Free, open source, and made for your everyday."
+    />
+    <meta
+      property="og:image"
+      content="https://qaxxorovxd-mobile.github.io/so-standby/assets/shots/analog-weather.jpg"
+    />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="assets/icon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <svg
+      class="symbol-library"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <symbol id="i-sun" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+          />
+        </symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24">
+          <path d="M20.7 14A9 9 0 0 1 10 3.3 9 9 0 1 0 20.7 14Z" />
+        </symbol>
+        <symbol id="i-cloud" viewBox="0 0 24 24">
+          <path
+            d="M6.5 19a5.5 5.5 0 1 1 1.3-10.8A6.5 6.5 0 0 1 20.5 10 4.5 4.5 0 0 1 19 19Z"
+          />
+        </symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 6v6l4 2" />
+        </symbol>
+        <symbol id="i-grid" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="2" />
+          <rect x="14" y="3" width="7" height="7" rx="2" />
+          <rect x="3" y="14" width="7" height="7" rx="2" />
+          <rect x="14" y="14" width="7" height="7" rx="2" />
+        </symbol>
+        <symbol id="i-bolt" viewBox="0 0 24 24">
+          <path d="m13 2-9 12h7l-1 8 10-13h-8Z" />
+        </symbol>
+        <symbol id="i-music" viewBox="0 0 24 24">
+          <path d="M9 18V5l11-2v13M9 9l11-2" />
+          <ellipse cx="6" cy="18" rx="3" ry="3" />
+          <ellipse cx="17" cy="16" rx="3" ry="3" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path d="m5 12 4 4L19 6" />
+        </symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24">
+          <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z" />
+          <path d="m8 12 3 3 5-6" />
+        </symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24">
+          <rect x="6" y="2" width="12" height="20" rx="3" />
+          <path d="M10 5h4m-3 14h2" />
+        </symbol>
+        <symbol id="i-replay" viewBox="0 0 24 24">
+          <path d="M4 10a8 8 0 1 1 1 7M4 3v7h7" />
+        </symbol>
+      </defs>
+    </svg>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <nav class="nav shell" aria-label="Main navigation">
+        <a class="brand" href="#" aria-label="So StandBy home"
+          ><img src="assets/icon.png" width="32" height="32" alt="" /><span
+            >So StandBy<span class="brand-dot">.</span></span
+          ></a
+        >
+        <div class="nav-links">
+          <a href="#experience">Experience</a><a href="#details">The details</a
+          ><a class="nav-download" href="#download">Get the app</a>
+        </div>
+      </nav>
+    </header>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-copy shell">
+          <p class="eyebrow">
+            <svg class="icon"><use href="#i-phone" /></svg> A little iOS spirit.
+            Made for Android.
+          </p>
+          <h1 id="hero-title">Your phone.<br /><span>A softer side.</span></h1>
+          <p class="hero-description">
+            A beautiful place for your phone to pause.<br />Time, weather, and
+            your everyday. All at a glance.
+          </p>
+          <div class="actions">
+            <a
+              class="button primary"
+              data-apk
+              href="https://github.com/qaxxorovxd-mobile/so-standby/releases/latest"
+              >Download for Android</a
+            ><a class="button quiet" href="#experience"
+              >Find your favorite view</a
+            >
+          </div>
+          <p class="fine-print">
+            Free &amp; open source <span>·</span> Android 7.0+
+          </p>
+        </div>
+        <div class="preview-stage shell" id="experience">
+          <div class="device-wrap">
+            <div class="device" id="device">
+              <div class="device-edge" aria-hidden="true"></div>
+              <div class="device-screen">
+                <div
+                  class="preview-pane digital-pane"
+                  id="panel-digital"
+                  role="tabpanel"
+                  aria-labelledby="tab-digital"
+                >
+                  <div class="digital-face">
+                    <span class="clock-date" id="clock-date"
+                      >Thursday, November 19</span
+                    ><span class="clock-time" id="clock-time">09:41</span
+                    ><span class="clock-caption">A moment, just for you.</span>
+                  </div>
+                  <div class="weather-face">
+                    <div class="weather-top">
+                      <span>Tashkent</span
+                      ><svg class="icon"><use href="#i-sun" /></svg>
+                    </div>
+                    <span class="weather-temp">11°</span
+                    ><span class="weather-condition">Mostly clear</span
+                    ><span class="weather-range">H:19° &nbsp; L:8°</span>
+                  </div>
+                </div>
+                <div
+                  class="preview-pane image-pane"
+                  id="panel-analog"
+                  role="tabpanel"
+                  aria-labelledby="tab-analog"
+                  hidden
+                >
+                  <img
+                    src="assets/shots/analog-weather.jpg"
+                    draggable="false"
+                    width="800"
+                    height="360"
+                    alt="Analog clock beside the weather in the So StandBy app"
+                  />
+                </div>
+                <div
+                  class="preview-pane image-pane"
+                  id="panel-solar"
+                  role="tabpanel"
+                  aria-labelledby="tab-solar"
+                  hidden
+                >
+                  <img
+                    src="assets/shots/solar.jpg"
+                    draggable="false"
+                    width="800"
+                    height="360"
+                    alt="The warm gradient Solar clock in So StandBy"
+                  />
+                </div>
+                <div class="camera" aria-hidden="true"></div>
+              </div>
             </div>
-            <img src="assets/shots/analog-weather.jpg" alt="Analog clock and weather" loading="lazy" />
-            <img src="assets/shots/analog-calendar.jpg" alt="Analog clock and calendar" loading="lazy" />
-            <img src="assets/shots/solar.jpg" alt="Solar clock style" loading="lazy" />
-            <img src="assets/shots/world-clock.jpg" alt="World clock" loading="lazy" />
-            <img src="assets/shots/dot-matrix.jpg" alt="Dot matrix clock style" loading="lazy" />
+            <div class="device-shadow" aria-hidden="true"></div>
           </div>
-        </div>
-        <div class="dots" id="dots" role="tablist" aria-label="Preview slides"></div>
-      </div>
-
-      <div class="stats">
-        <div class="stat reveal"><b>23</b><span>StandBy views</span></div>
-        <div class="stat reveal"><b>10</b><span>Clock styles</span></div>
-        <div class="stat reveal"><b>11</b><span>Accent colors</span></div>
-        <div class="stat reveal"><b>0</b><span>Ads or trackers</span></div>
-      </div>
-    </div>
-  </header>
-
-  <main>
-    <section id="features">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <div class="kicker">Features</div>
-          <h2>Everything at a glance.</h2>
-          <p>Designed for a phone resting on its charger: big, bold type, deep blacks and nothing that gets in your way.</p>
-        </div>
-
-        <div class="grid">
-          <div class="card span-4 reveal">
-            <div class="ic" style="background:linear-gradient(135deg,#ffb340,#ff9f0a)">🕰️</div>
-            <h3>13 pages, 10 clock styles</h3>
-            <p>Swipe sideways through widget pages. On the Clock page, swipe up or down to switch between Digital, Analog, Solar, Float, Flip, Glow, Word Clock, Dot Matrix, Duotone and Ring.</p>
-            <img class="shot" src="assets/shots/date-weather.jpg" alt="Date and weather view" loading="lazy" />
-          </div>
-          <div class="card span-2 reveal">
-            <div class="ic" style="background:linear-gradient(135deg,#4fa3ff,#0a84ff)">↻</div>
-            <h3>Portrait &amp; landscape</h3>
-            <p>Every view has its own layout for each orientation, so it looks right however you dock the phone.</p>
-          </div>
-          <div class="card span-2 half reveal">
-            <div class="ic" style="background:linear-gradient(135deg,#7fd6ff,#64d2ff)">☁︎</div>
-            <h3>Live weather</h3>
-            <p>Current conditions, highs and lows, and an hourly forecast from Open‑Meteo. No API key or account needed.</p>
-          </div>
-          <div class="card span-2 half reveal">
-            <div class="ic" style="background:linear-gradient(135deg,#ff6482,#ff2d55)">♫</div>
-            <h3>Now Playing</h3>
-            <p>Album art, progress and play, pause and skip controls for Spotify, YouTube Music and other players.</p>
-          </div>
-          <div class="card span-2 reveal">
-            <div class="ic" style="background:linear-gradient(135deg,#ff7a6e,#ff453a)">☾</div>
-            <h3>Night Mode</h3>
-            <p>A red, sleep‑friendly tint that you can set to Off, Auto (22:00–06:00) or On.</p>
-          </div>
-          <div class="card span-3 reveal">
-            <div class="ic" style="background:linear-gradient(135deg,#5ee27c,#30d158)">◎</div>
-            <h3>Day Progress &amp; Batteries</h3>
-            <p>Activity‑style rings for how much of the day, week, month and year has passed, plus a large battery ring.</p>
-            <img class="shot" src="assets/shots/day-progress.jpg" alt="Day progress rings" loading="lazy" />
-          </div>
-          <div class="card span-3 reveal">
-            <div class="ic" style="background:linear-gradient(135deg,#b78cff,#bf5af2)">✦</div>
-            <h3>Thoughtful details</h3>
-            <p>Burn‑in protection, keep‑screen‑on, 12/24‑hour time, °C/°F, a smooth sweeping second hand, a reduced‑motion option and glass controls.</p>
-            <img class="shot" src="assets/shots/word-clock.jpg" alt="Word clock style" loading="lazy" />
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="gallery">
-      <div class="section-head wrap reveal">
-        <div class="kicker">Gallery</div>
-        <h2>Pick your stand.</h2>
-        <p>A few of the 23 views. Swipe through the rest on your phone.</p>
-      </div>
-      <div class="gallery" id="gallery-track">
-        <figure><img src="assets/shots/smart.jpg" alt="" loading="lazy" /><figcaption>Smart <span>Time · date · weather</span></figcaption></figure>
-        <figure><img src="assets/shots/analog-weather.jpg" alt="" loading="lazy" /><figcaption>Analog + Weather <span>Widgets</span></figcaption></figure>
-        <figure><img src="assets/shots/forecast.jpg" alt="" loading="lazy" /><figcaption>Forecast <span>Hourly</span></figcaption></figure>
-        <figure><img src="assets/shots/analog-calendar.jpg" alt="" loading="lazy" /><figcaption>Analog + Calendar <span>Widgets</span></figcaption></figure>
-        <figure><img src="assets/shots/solar.jpg" alt="" loading="lazy" /><figcaption>Solar <span>Clock style</span></figcaption></figure>
-        <figure><img src="assets/shots/world-clock.jpg" alt="" loading="lazy" /><figcaption>World Clock <span>Day &amp; night faces</span></figcaption></figure>
-        <figure><img src="assets/shots/dot-matrix.jpg" alt="" loading="lazy" /><figcaption>Dot Matrix <span>Clock style</span></figcaption></figure>
-        <figure><img src="assets/shots/word-clock.jpg" alt="" loading="lazy" /><figcaption>Word Clock <span>Clock style</span></figcaption></figure>
-        <figure><img src="assets/shots/day-progress.jpg" alt="" loading="lazy" /><figcaption>Day Progress <span>Rings</span></figcaption></figure>
-      </div>
-      <div class="gallery-nav">
-        <button type="button" aria-label="Previous" data-dir="-1">‹</button>
-        <button type="button" aria-label="Next" data-dir="1">›</button>
-      </div>
-      <div class="wrap" style="margin-top:56px">
-        <div class="chips reveal">
-          <span class="chip accent">Digital</span><span class="chip">Analog</span><span class="chip accent">Solar</span>
-          <span class="chip">Float</span><span class="chip accent">Flip</span><span class="chip">Glow</span>
-          <span class="chip accent">Word Clock</span><span class="chip">Dot Matrix</span><span class="chip accent">Duotone</span><span class="chip">Ring</span>
-        </div>
-      </div>
-    </section>
-
-    <section id="charging">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <div class="kicker" style="color:var(--green)">Charging animation</div>
-          <h2>Plug in. Watch it power up.</h2>
-          <p>When you connect a charger, So StandBy jumps straight to the Batteries stand and plays a full‑screen animation. Afterwards a <b>‹ Back</b> button appears for 3 seconds and takes you back to the page you were on.</p>
-        </div>
-        <div class="charge">
-          <div class="card reveal">
-            <img src="assets/shots/charging-cable.jpg" alt="Cable charging animation" loading="lazy" />
-            <div class="txt">
-              <span class="pill" style="background:rgba(48,209,88,.12);color:var(--green)">USB‑C cable</span>
-              <h3>Energy from the port</h3>
-              <p>A stream of particles flies in from the edge where the USB‑C port is. The app reads the screen rotation, so the port is at the bottom in portrait and on the left or right in landscape.</p>
+          <div class="preview-controls">
+            <div
+              class="segmented"
+              role="tablist"
+              aria-label="Clock preview style"
+            >
+              <button
+                id="tab-digital"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="panel-digital"
+                data-style="digital"
+              >
+                <svg class="icon"><use href="#i-grid" /></svg>Digital
+              </button>
+              <button
+                id="tab-analog"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="panel-analog"
+                tabindex="-1"
+                data-style="analog"
+              >
+                <svg class="icon"><use href="#i-clock" /></svg>Analog
+              </button>
+              <button
+                id="tab-solar"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="panel-solar"
+                tabindex="-1"
+                data-style="solar"
+              >
+                <svg class="icon"><use href="#i-sun" /></svg>Solar
+              </button>
+            </div>
+            <div class="customize">
+              <div
+                class="swatches"
+                role="group"
+                aria-label="Digital clock accent color"
+              >
+                <button
+                  class="swatch"
+                  type="button"
+                  data-color="#c5b5ff"
+                  style="--swatch: #b4a0ed"
+                  aria-label="Lavender"
+                  aria-pressed="true"
+                >
+                  <svg class="icon"><use href="#i-check" /></svg>
+                </button>
+                <button
+                  class="swatch"
+                  type="button"
+                  data-color="#ffb34d"
+                  style="--swatch: #ffb34d"
+                  aria-label="Orange"
+                  aria-pressed="false"
+                >
+                  <svg class="icon"><use href="#i-check" /></svg>
+                </button>
+                <button
+                  class="swatch"
+                  type="button"
+                  data-color="#93d5f5"
+                  style="--swatch: #93d5f5"
+                  aria-label="Sky blue"
+                  aria-pressed="false"
+                >
+                  <svg class="icon"><use href="#i-check" /></svg>
+                </button>
+                <button
+                  class="swatch"
+                  type="button"
+                  data-color="#f4f4f7"
+                  style="--swatch: #fff"
+                  aria-label="White"
+                  aria-pressed="false"
+                >
+                  <svg class="icon"><use href="#i-check" /></svg>
+                </button>
+              </div>
+              <span class="control-divider"></span
+              ><button
+                class="night-control"
+                id="night-control"
+                type="button"
+                aria-pressed="false"
+              >
+                <svg class="icon"><use href="#i-moon" /></svg><span>Night</span>
+              </button>
             </div>
           </div>
-          <div class="card reveal">
-            <img src="assets/shots/charging-wireless.jpg" alt="Wireless charging animation" loading="lazy" />
-            <div class="txt">
-              <span class="pill" style="background:rgba(100,210,255,.12);color:#64d2ff">Wireless</span>
-              <h3>A ring from the center</h3>
-              <p>A shimmering, MagSafe‑style ring blooms from the middle of the screen, then settles into the battery ring and fills to your charge level.</p>
+          <p class="preview-note" id="preview-note" aria-live="polite">
+            Make it yours. Try a style or a little color.
+          </p>
+          <p class="sample-label">Interactive preview · Illustrative weather</p>
+        </div>
+      </section>
+      <section class="intro shell reveal" aria-label="About So StandBy">
+        <p>Less picking up.<br /><span>More taking it all in.</span></p>
+        <div class="intro-description">
+          On your desk. Beside your bed. Wherever your day slows down, So
+          StandBy puts the things that matter right where you can see them.
+          <div class="inline-facts">
+            <span><b>23</b> beautiful views</span
+            ><span><b>10</b> clock styles</span
+            ><span><b>11</b> accent colors</span>
+          </div>
+        </div>
+      </section>
+      <section
+        class="features section shell"
+        id="details"
+        aria-labelledby="features-title"
+      >
+        <div class="section-heading reveal">
+          <p class="eyebrow">THOUGHTFULLY SIMPLE</p>
+          <h2 id="features-title">Your day.<br />Beautifully together.</h2>
+          <p>Familiar things. A fresh perspective.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature feature-weather reveal">
+            <div class="feature-copy">
+              <span class="feature-label"
+                ><svg class="icon"><use href="#i-cloud" /></svg> WEATHER</span
+              >
+              <h3>A little heads-up<br />for the day ahead.</h3>
+              <p>
+                Current conditions and hourly forecasts.<br />One less reason to
+                pick up your phone.
+              </p>
             </div>
+            <div
+              class="weather-widget"
+              aria-label="Illustrative hourly weather forecast"
+            >
+              <div class="weather-widget-head">
+                <span>Tashkent <span class="location-mark">⌁</span></span
+                ><svg class="icon"><use href="#i-sun" /></svg>
+              </div>
+              <div class="weather-widget-main">
+                <span>19°</span>
+                <div>Mostly clear<br /><span>H:21° &nbsp; L:12°</span></div>
+              </div>
+              <div class="forecast-hours">
+                <div>
+                  <span>Now</span><svg class="icon"><use href="#i-sun" /></svg
+                  ><b>19°</b>
+                </div>
+                <div>
+                  <span>12 PM</span><svg class="icon"><use href="#i-sun" /></svg
+                  ><b>20°</b>
+                </div>
+                <div>
+                  <span>1 PM</span
+                  ><svg class="icon"><use href="#i-cloud" /></svg><b>21°</b>
+                </div>
+                <div>
+                  <span>2 PM</span
+                  ><svg class="icon"><use href="#i-cloud" /></svg><b>20°</b>
+                </div>
+                <div>
+                  <span>3 PM</span><svg class="icon"><use href="#i-sun" /></svg
+                  ><b>19°</b>
+                </div>
+              </div>
+              <span class="widget-sample">Sample forecast</span>
+            </div>
+          </article>
+          <article class="feature feature-night reveal">
+            <div class="feature-copy">
+              <span class="feature-label"
+                ><svg class="icon"><use href="#i-moon" /></svg> NIGHT MODE</span
+              >
+              <h3>Easy on the eyes.<br />Even after hours.</h3>
+              <p>
+                A gentle red tint when the lights go down.<br />Switch it on, or
+                let the evening decide.
+              </p>
+            </div>
+            <div class="night-visual" aria-hidden="true">
+              <svg class="night-moon icon"><use href="#i-moon" /></svg
+              ><span>22:08</span><small>Time to wind down.</small>
+            </div>
+            <span class="night-auto"
+              ><span></span> Automatic from 22:00 to 06:00</span
+            >
+          </article>
+          <article class="feature feature-calendar reveal">
+            <div class="feature-copy">
+              <span class="feature-label"
+                ><svg class="icon"><use href="#i-grid" /></svg> WIDGET
+                VIEWS</span
+              >
+              <h3>A perfect little pairing.</h3>
+              <p>
+                Your clock and calendar. Your date and weather.<br />Keep your
+                favorites side by side.
+              </p>
+            </div>
+            <div class="shot-frame">
+              <img
+                src="assets/shots/analog-calendar.jpg"
+                width="800"
+                height="360"
+                loading="lazy"
+                alt="So StandBy pairs an analog clock with a full month calendar"
+              />
+            </div>
+          </article>
+          <article class="feature feature-charge reveal">
+            <div class="feature-copy">
+              <span class="feature-label"
+                ><svg class="icon"><use href="#i-bolt" /></svg> CHARGING</span
+              >
+              <h3>A spark of delight.</h3>
+              <p>Plug in or go wireless.<br />A small moment worth watching.</p>
+            </div>
+            <div class="charge-visual" id="charge-visual">
+              <div class="charge-orbit"></div>
+              <div class="charge-ring">
+                <svg class="icon"><use href="#i-bolt" /></svg
+                ><strong>76<span>%</span></strong
+                ><small>Charging</small>
+              </div>
+            </div>
+            <button type="button" class="replay" id="replay-charge">
+              <svg class="icon"><use href="#i-replay" /></svg> Replay animation
+            </button>
+          </article>
+        </div>
+        <div class="small-details reveal">
+          <div>
+            <span class="detail-icon pink"
+              ><svg class="icon"><use href="#i-music" /></svg
+            ></span>
+            <h3>A place for your music.</h3>
+            <p>
+              Album art and playback controls.<br />Your soundtrack, within
+              reach.
+            </p>
+          </div>
+          <div>
+            <span class="detail-icon blue"
+              ><svg class="icon"><use href="#i-phone" /></svg
+            ></span>
+            <h3>At home, either way.</h3>
+            <p>
+              Portrait or landscape. A considered<br />layout for the way you
+              dock.
+            </p>
+          </div>
+          <div>
+            <span class="detail-icon green"
+              ><svg class="icon"><use href="#i-shield" /></svg
+            ></span>
+            <h3>Quietly thoughtful.</h3>
+            <p>
+              Burn-in protection, a sweeping second<br />hand, and no account to
+              create.
+            </p>
           </div>
         </div>
-      </div>
-    </section>
-
-    <section id="install">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <div class="kicker">Get started</div>
-          <h2>Up and running in a minute.</h2>
+      </section>
+      <section class="gallery-section section" aria-labelledby="gallery-title">
+        <div class="section-heading shell reveal">
+          <p class="eyebrow">A VIEW FOR EVERY MOOD</p>
+          <h2 id="gallery-title">Find your kind of time.</h2>
+          <p>Bold. Playful. Perfectly understated. Make it feel like you.</p>
         </div>
-        <div class="steps">
-          <div class="step reveal"><h3>Download the APK</h3><p>Get the latest release from GitHub. It's free, with no ads and no sign‑up.</p></div>
-          <div class="step reveal"><h3>Install &amp; allow</h3><p>Open the file and allow installing from this source. On first launch, grant Location for weather and Notification access for media.</p></div>
-          <div class="step reveal"><h3>Dock &amp; enjoy</h3><p>Put your phone on its charger. Swipe to change views, tap to show the controls, and long‑press to open Settings.</p></div>
+        <div
+          class="gallery shell"
+          role="region"
+          aria-label="App screenshot gallery"
+          tabindex="0"
+        >
+          <figure class="gallery-card">
+            <div class="gallery-image">
+              <img
+                src="assets/shots/solar.jpg"
+                draggable="false"
+                width="800"
+                height="360"
+                loading="lazy"
+                alt="Solar clock with an orange and blue gradient"
+              />
+            </div>
+            <figcaption>
+              <span>Solar</span><span>A warmer outlook.</span>
+            </figcaption>
+          </figure>
+          <figure class="gallery-card">
+            <div class="gallery-image">
+              <img
+                src="assets/shots/word-clock.jpg"
+                width="800"
+                height="360"
+                loading="lazy"
+                alt="Word clock spelling out the time"
+              />
+            </div>
+            <figcaption>
+              <span>Word Clock</span><span>Time, in a few words.</span>
+            </figcaption>
+          </figure>
+          <figure class="gallery-card">
+            <div class="gallery-image">
+              <img
+                src="assets/shots/world-clock.jpg"
+                width="800"
+                height="360"
+                loading="lazy"
+                alt="Four clocks displaying different world time zones"
+              />
+            </div>
+            <figcaption>
+              <span>World Clock</span><span>A little closer, anywhere.</span>
+            </figcaption>
+          </figure>
+          <figure class="gallery-card">
+            <div class="gallery-image">
+              <img
+                src="assets/shots/dot-matrix.jpg"
+                width="800"
+                height="360"
+                loading="lazy"
+                alt="Dot matrix clock with bright green digits"
+              />
+            </div>
+            <figcaption>
+              <span>Dot Matrix</span><span>A familiar kind of future.</span>
+            </figcaption>
+          </figure>
+          <figure class="gallery-card">
+            <div class="gallery-image">
+              <img
+                src="assets/shots/day-progress.jpg"
+                width="800"
+                height="360"
+                loading="lazy"
+                alt="Colorful rings tracking progress through the day, week, month and year"
+              />
+            </div>
+            <figcaption>
+              <span>Day Progress</span
+              ><span>See the day come full circle.</span>
+            </figcaption>
+          </figure>
         </div>
-
-        <div class="final reveal" id="download">
-          <img class="app-icon" src="assets/icon.png" alt="" />
-          <h2>Get So StandBy.</h2>
-          <p class="lead" style="margin-top:12px">Version <span data-version>1.3.0</span> · <span data-size>~50 MB</span> · Android 7.0+</p>
-          <div class="ctas">
-            <a class="btn btn-primary" data-apk href="https://github.com/qaxxorovxd-mobile/so-standby/releases/latest">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-              Download APK
-            </a>
-            <a class="btn btn-ghost" href="https://github.com/qaxxorovxd-mobile/so-standby/releases">All releases</a>
+        <div class="gallery-controls shell">
+          <p>Real views from So StandBy.</p>
+          <div>
+            <button type="button" data-gallery="-1" aria-label="Previous views">
+              <svg viewBox="0 0 24 24" class="icon">
+                <path d="m14 6-6 6 6 6" />
+              </svg></button
+            ><button type="button" data-gallery="1" aria-label="Next views">
+              <svg viewBox="0 0 24 24" class="icon">
+                <path d="m10 6 6 6-6 6" />
+              </svg>
+            </button>
           </div>
-          <p class="meta">Your data never leaves your device. The only network request is to Open‑Meteo for the forecast.</p>
         </div>
+      </section>
+      <section
+        class="download-section section shell"
+        id="download"
+        aria-labelledby="download-title"
+      >
+        <div class="download-card reveal">
+          <img
+            src="assets/icon.png"
+            alt="So StandBy app icon"
+            width="80"
+            height="80"
+          />
+          <p class="eyebrow">READY WHEN YOU ARE</p>
+          <h2 id="download-title">
+            Give your phone<br />a beautiful place to rest.
+          </h2>
+          <p>A little setup. A whole new way to stand by.</p>
+          <a
+            class="button primary"
+            data-apk
+            href="https://github.com/qaxxorovxd-mobile/so-standby/releases/latest"
+            >Download So StandBy</a
+          >
+          <p class="download-meta">
+            Free &amp; open source <span>·</span> Android 7.0+
+            <span data-release></span>
+          </p>
+          <a
+            class="source-link"
+            href="https://github.com/qaxxorovxd-mobile/so-standby"
+            >Made with care. Open on GitHub.</a
+          >
+        </div>
+        <div class="setup">
+          <h3>Make yourself at home.</h3>
+          <details>
+            <summary>
+              How do I install it?<span class="plus" aria-hidden="true"></span>
+            </summary>
+            <p>
+              Download the APK from GitHub Releases, open the file on your
+              Android phone, and allow installation from that source if Android
+              asks. Open So StandBy, choose your view, and rest your phone on a
+              stand.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Which permissions do I need?<span
+                class="plus"
+                aria-hidden="true"
+              ></span>
+            </summary>
+            <p>
+              Location lets the app show local weather. You can also select a
+              city in Settings. Notification access enables the Now Playing view
+              to read and control your active media session. You can use the
+              clock without either permission.
+            </p>
+          </details>
+          <details>
+            <summary>
+              How do I change the view?<span
+                class="plus"
+                aria-hidden="true"
+              ></span>
+            </summary>
+            <p>
+              Swipe left or right to change pages. On the Clock page, swipe up
+              or down to try another style. Tap to show controls, or long-press
+              to open Settings and choose your accent color.
+            </p>
+          </details>
+        </div>
+      </section>
+    </main>
+    <footer class="footer shell">
+      <div>
+        <a class="brand" href="#"
+          ><img src="assets/icon.png" width="26" height="26" alt="" /><span
+            >So StandBy.</span
+          ></a
+        >
+        <p>A small app for the quieter moments.</p>
       </div>
-    </section>
-  </main>
-
-  <footer>
-    <div class="wrap">
-      <span>© <span id="year">2026</span> So StandBy · Open source on <a href="https://github.com/qaxxorovxd-mobile/so-standby">GitHub</a></span>
-      <span>Weather by <a href="https://open-meteo.com">Open‑Meteo</a> · Font: <a href="https://rsms.me/inter/">Inter</a> · Not affiliated with Apple Inc.</span>
-    </div>
-  </footer>
-
-  <script>
-    (function () {
-      // Live clock in the hero device
-      var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      function tick() {
-        var d = new Date();
-        document.getElementById('live-time').textContent = d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
-        document.getElementById('live-date').textContent = days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate();
-      }
-      tick();
-      setInterval(tick, 1000);
-      document.getElementById('year').textContent = new Date().getFullYear();
-
-      // Slideshow
-      var slides = Array.prototype.filter.call(document.getElementById('screen').children, function (el) {
-        return !el.classList.contains('island');
-      });
-      var dots = document.getElementById('dots');
-      var cur = 0, timer;
-      slides.forEach(function (_, i) {
-        var b = document.createElement('button');
-        b.type = 'button';
-        b.setAttribute('aria-label', 'Slide ' + (i + 1));
-        b.onclick = function () { show(i); restart(); };
-        dots.appendChild(b);
-      });
-      function show(i) {
-        slides[cur].classList.remove('on');
-        dots.children[cur].classList.remove('on');
-        cur = i;
-        slides[cur].classList.add('on');
-        dots.children[cur].classList.add('on');
-      }
-      function restart() {
-        clearInterval(timer);
-        timer = setInterval(function () { show((cur + 1) % slides.length); }, 3200);
-      }
-      dots.children[0].classList.add('on');
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) restart();
-
-      // Gallery arrows
-      var track = document.getElementById('gallery-track');
-      document.querySelectorAll('.gallery-nav button').forEach(function (b) {
-        b.onclick = function () {
-          var w = track.querySelector('figure').getBoundingClientRect().width + 18;
-          track.scrollBy({ left: w * Number(b.dataset.dir), behavior: 'smooth' });
-        };
-      });
-
-      // Reveal on scroll
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-        });
-      }, { threshold: 0.12 });
-      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
-
-      // Point download buttons at the latest APK asset
-      fetch('https://api.github.com/repos/qaxxorovxd-mobile/so-standby/releases/latest')
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (rel) {
-          if (!rel) return;
-          var apk = (rel.assets || []).find(function (a) { return /\.apk$/i.test(a.name); });
-          if (apk) {
-            document.querySelectorAll('[data-apk]').forEach(function (a) { a.href = apk.browser_download_url; });
-            document.querySelectorAll('[data-size]').forEach(function (s) { s.textContent = (apk.size / 1048576).toFixed(1) + ' MB'; });
-          }
-          var v = (rel.tag_name || '').replace(/^v/, '');
-          if (v) document.querySelectorAll('[data-version]').forEach(function (s) { s.textContent = v; });
-        })
-        .catch(function () {});
-    })();
-  </script>
-</body>
+      <div class="footer-links">
+        <a href="https://github.com/qaxxorovxd-mobile/so-standby">GitHub</a
+        ><a href="https://github.com/qaxxorovxd-mobile/so-standby/releases"
+          >All releases</a
+        ><a href="https://open-meteo.com/">Weather by Open-Meteo</a>
+      </div>
+      <p class="disclaimer">
+        An independent project. Inspired by StandBy. Not affiliated with Apple
+        Inc.
+      </p>
+    </footer>
+  </body>
 </html>
