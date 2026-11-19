@@ -13,6 +13,7 @@ import '../services/power.dart';
 import '../widgets/analog_clock.dart';
 import '../widgets/charging_overlay.dart';
 import '../widgets/tiles.dart';
+import '../widgets/ios_surface.dart';
 import 'more_pages.dart';
 import 'pages.dart';
 import 'settings_sheet.dart';
@@ -164,20 +165,23 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
   }
 
   Widget _pageFor(int i) => switch (i) {
-        0 => const SmartPage(),
-        1 => const ClockStylesPage(),
-        2 => const SplitPage(first: AnalogTile(), second: WeatherTile()),
-        3 => const SplitPage(first: DateTile(), second: WeatherTile()),
-        4 => const SplitPage(first: AnalogTile(face: AnalogFace.minimal), second: CalendarTile()),
-        5 => const SplitPage(first: DigitalDateTile(), second: CalendarTile()),
-        6 => const ForecastPage(),
-        7 => const WorldClockPage(),
-        8 => const SplitPage(first: AnalogTile(), second: BatteryTile()),
-        9 => const DayProgressPage(),
-        10 => const SplitPage(first: DateTile(), second: CalendarTile()),
-        11 => const StopwatchPage(),
-        _ => const MediaPage(),
-      };
+    0 => const SmartPage(),
+    1 => const ClockStylesPage(),
+    2 => const SplitPage(first: AnalogTile(), second: WeatherTile()),
+    3 => const SplitPage(first: DateTile(), second: WeatherTile()),
+    4 => const SplitPage(
+      first: AnalogTile(face: AnalogFace.minimal),
+      second: CalendarTile(),
+    ),
+    5 => const SplitPage(first: DigitalDateTile(), second: CalendarTile()),
+    6 => const ForecastPage(),
+    7 => const WorldClockPage(),
+    8 => const SplitPage(first: AnalogTile(), second: BatteryTile()),
+    9 => const DayProgressPage(),
+    10 => const SplitPage(first: DateTile(), second: CalendarTile()),
+    11 => const StopwatchPage(),
+    _ => const MediaPage(),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +190,7 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
 
     final pages = PageView.builder(
       controller: _pc,
+      physics: const BouncingScrollPhysics(),
       onPageChanged: (i) {
         final p = i % _pageCount;
         HapticFeedback.selectionClick();
@@ -193,7 +198,7 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
         s.lastPage = p;
         if (_charge == null) _showChrome(const Duration(milliseconds: 1600));
       },
-      itemBuilder: (context, i) => _pageFor(i % _pageCount),
+      itemBuilder: (context, i) => PageDepth(controller: _pc, index: i, child: _pageFor(i % _pageCount)),
     );
 
     return PopScope(
@@ -204,131 +209,142 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
           behavior: HitTestBehavior.opaque,
           onTap: _showChrome,
           onLongPress: _openSettings,
-          child: ClockBuilder(builder: (context, now) {
-            final night = _isNight(now);
-            Widget content = Stack(children: [
-              Positioned.fill(child: _BurnInShift(enabled: s.burnIn, minute: now.hour * 60 + now.minute, child: pages)),
-              if (_charge != null)
-                Positioned.fill(
-                  child: ChargingOverlay(key: ObjectKey(_charge), event: _charge!, onDone: _onChargeDone),
-                ),
-            ]);
-            if (night) {
-              content = ColorFiltered(colorFilter: _nightFilter, child: content);
-            }
-            return Stack(children: [
-              Positioned.fill(child: content),
-              // "Back" pill after the charging animation (visible for 3 s)
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                child: SafeArea(
-                  child: Center(
-                    child: IgnorePointer(
-                      ignoring: !_back,
-                      child: AnimatedSlide(
-                        offset: _back ? Offset.zero : const Offset(-1.2, 0),
-                        duration: const Duration(milliseconds: 450),
-                        curve: Curves.easeOutBack,
-                        child: AnimatedOpacity(
-                          opacity: _back ? 1 : 0,
-                          duration: const Duration(milliseconds: 300),
-                          child: _BackPill(onTap: _goBack, color: night ? Palette.red : Palette.label),
-                        ),
-                      ),
-                    ),
+          child: ClockBuilder(
+            builder: (context, now) {
+              final night = _isNight(now);
+              Widget content = Stack(
+                children: [
+                  Positioned.fill(
+                    child: _BurnInShift(enabled: s.burnIn, minute: now.hour * 60 + now.minute, child: pages),
                   ),
-                ),
-              ),
-              // Page dots
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 14,
-                child: IgnorePointer(
-                  child: AnimatedOpacity(
-                    opacity: _chrome ? 1 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      for (var i = 0; i < _pageCount; i++)
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: i == _page ? 18 : 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: (night ? Palette.red : Palette.label).withValues(alpha: i == _page ? 0.8 : 0.25),
-                            borderRadius: BorderRadius.circular(4),
+                  if (_charge != null)
+                    Positioned.fill(
+                      child: ChargingOverlay(key: ObjectKey(_charge), event: _charge!, onDone: _onChargeDone),
+                    ),
+                ],
+              );
+              if (night) {
+                content = ColorFiltered(colorFilter: _nightFilter, child: content);
+              }
+              return Stack(
+                children: [
+                  Positioned.fill(child: content),
+                  // "Back" pill after the charging animation (visible for 3 s)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: SafeArea(
+                      child: Center(
+                        child: IgnorePointer(
+                          ignoring: !_back,
+                          child: AnimatedSlide(
+                            offset: _back ? Offset.zero : const Offset(-1.2, 0),
+                            duration: const Duration(milliseconds: 450),
+                            curve: Curves.easeOutBack,
+                            child: AnimatedOpacity(
+                              opacity: _back ? 1 : 0,
+                              duration: const Duration(milliseconds: 300),
+                              child: _BackPill(onTap: _goBack, color: night ? Palette.red : Palette.label),
+                            ),
                           ),
                         ),
-                    ]),
-                  ),
-                ),
-              ),
-              // Settings button
-              Positioned(
-                top: 16,
-                right: 16,
-                child: SafeArea(
-                  child: IgnorePointer(
-                    ignoring: !_chrome,
-                    child: AnimatedOpacity(
-                      opacity: _chrome ? 1 : 0,
-                      duration: const Duration(milliseconds: 300),
-                      child: _RoundButton(
-                        icon: CupertinoIcons.gear_alt_fill,
-                        onTap: _openSettings,
-                        color: night ? Palette.red : Palette.label,
                       ),
                     ),
                   ),
-                ),
-              ),
-              Positioned(
-                top: 16,
-                left: 16,
-                child: SafeArea(
-                  child: IgnorePointer(
-                    ignoring: !_chrome,
-                    child: AnimatedOpacity(
-                      opacity: _chrome ? 1 : 0,
-                      duration: const Duration(milliseconds: 300),
-                      child: _RoundButton(
-                        icon: night ? CupertinoIcons.sun_max_fill : CupertinoIcons.moon_fill,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          setState(() => _nightOverride = !night);
-                          _showChrome();
-                        },
-                        color: night ? Palette.red : Palette.label,
+                  // A single floating control capsule keeps the display uncluttered.
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 14,
+                    child: SafeArea(
+                      top: false,
+                      child: Center(
+                        child: ChromeReveal(
+                          visible: _chrome,
+                          child: GlassSurface(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _RoundButton(
+                                    label: t.nightMode,
+                                    icon: night ? CupertinoIcons.sun_max_fill : CupertinoIcons.moon_fill,
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      setState(() => _nightOverride = !night);
+                                      _showChrome();
+                                    },
+                                    color: night ? Palette.red : Palette.label,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    child: Semantics(
+                                      label: 'Page ${_page + 1} of $_pageCount',
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          for (var i = 0; i < _pageCount; i++)
+                                            AnimatedContainer(
+                                              duration: Motion.duration(context, 350),
+                                              curve: Motion.curve,
+                                              margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                                              width: i == _page ? 16 : 4,
+                                              height: 4,
+                                              decoration: BoxDecoration(
+                                                color: (night ? Palette.red : Palette.label).withValues(alpha: i == _page ? 0.95 : 0.24),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  _RoundButton(
+                                    label: t.settings,
+                                    icon: CupertinoIcons.gear_alt_fill,
+                                    onTap: _openSettings,
+                                    color: night ? Palette.red : Palette.label,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              // First-run hint
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 40,
-                child: IgnorePointer(
-                  child: AnimatedOpacity(
-                    opacity: _hint ? 1 : 0,
-                    duration: const Duration(milliseconds: 500),
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        decoration: BoxDecoration(color: Palette.card.withValues(alpha: 0.92), borderRadius: BorderRadius.circular(100)),
-                        child: Text('${t.hintSwipe}  ·  ${t.hintLongPress}',
-                            style: sf(14, weight: FontWeight.w600, color: Palette.label)),
+                  // First-run hint
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 84,
+                    child: IgnorePointer(
+                      child: AnimatedOpacity(
+                        opacity: _hint ? 1 : 0,
+                        duration: const Duration(milliseconds: 500),
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Palette.card.withValues(alpha: 0.92),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            child: Text(
+                              '${t.hintSwipe}  ·  ${t.hintLongPress}',
+                              textAlign: TextAlign.center,
+                              style: sf(14, weight: FontWeight.w600, color: Palette.label),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ]);
-          }),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -358,7 +374,7 @@ class _BurnInShift extends StatelessWidget {
     }
     return TweenAnimationBuilder<Offset>(
       tween: Tween(end: target),
-      duration: const Duration(seconds: 3),
+      duration: Motion.duration(context, 3000),
       curve: Curves.easeInOut,
       child: child,
       builder: (context, o, child) => Transform.translate(offset: o, child: child),
@@ -367,21 +383,30 @@ class _BurnInShift extends StatelessWidget {
 }
 
 class _RoundButton extends StatelessWidget {
-  const _RoundButton({required this.icon, required this.onTap, required this.color});
+  const _RoundButton({required this.icon, required this.onTap, required this.color, required this.label});
   final IconData icon;
   final VoidCallback onTap;
   final Color color;
+  final String label;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(color: Palette.card.withValues(alpha: 0.9), shape: BoxShape.circle),
-          child: Icon(icon, size: 22, color: color),
+  Widget build(BuildContext context) => Semantics(
+    label: label,
+    button: true,
+    child: CupertinoButton(
+      padding: const EdgeInsets.all(12),
+      minimumSize: const Size(44, 44),
+      onPressed: onTap,
+      child: AnimatedSwitcher(
+        duration: Motion.duration(context, 300),
+        transitionBuilder: (child, animation) => ScaleTransition(
+          scale: animation,
+          child: FadeTransition(opacity: animation, child: child),
         ),
-      );
+        child: Icon(icon, key: ValueKey(icon), size: 20, color: color),
+      ),
+    ),
+  );
 }
 
 class _BackPill extends StatelessWidget {
@@ -391,20 +416,26 @@ class _BackPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.only(left: 14),
-          padding: const EdgeInsets.fromLTRB(12, 12, 18, 12),
-          decoration: BoxDecoration(
-            color: const Color(0xE62C2C2E),
-            borderRadius: BorderRadius.circular(100),
-            boxShadow: const [BoxShadow(color: Color(0x80000000), blurRadius: 20)],
+    onTap: onTap,
+    child: Container(
+      margin: const EdgeInsets.only(left: 14),
+      padding: const EdgeInsets.fromLTRB(12, 12, 18, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xE62C2C2E),
+        borderRadius: BorderRadius.circular(100),
+        boxShadow: const [BoxShadow(color: Color(0x80000000), blurRadius: 20)],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(CupertinoIcons.chevron_back, size: 20, color: color),
+          const SizedBox(width: 4),
+          Text(
+            'Back',
+            style: sf(17, weight: FontWeight.w700, color: color),
           ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(CupertinoIcons.chevron_back, size: 20, color: color),
-            const SizedBox(width: 4),
-            Text('Back', style: sf(17, weight: FontWeight.w700, color: color)),
-          ]),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }

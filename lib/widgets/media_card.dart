@@ -6,6 +6,7 @@ import '../core/services_scope.dart';
 import '../core/settings.dart';
 import '../core/style.dart';
 import '../services/media.dart';
+import 'ios_surface.dart';
 
 String _mmss(int ms) {
   final s = (ms / 1000).floor();
@@ -81,29 +82,37 @@ class _Message extends StatelessWidget {
         fit: BoxFit.scaleDown,
         child: SizedBox(
           width: 360,
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFFF6482), Color(0xFFFF2D55)],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFF6482), Color(0xFFFF2D55)],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                borderRadius: BorderRadius.circular(24),
+                child: Icon(icon, size: 52, color: Palette.label),
               ),
-              child: Icon(icon, size: 52, color: Palette.label),
-            ),
-            const SizedBox(height: 22),
-            Text(title, textAlign: TextAlign.center, style: sf(26, weight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            Text(body, textAlign: TextAlign.center, style: sf(17, weight: FontWeight.w500, color: Palette.secondary, height: 1.3)),
-            if (action != null) ...[
               const SizedBox(height: 22),
-              _Pill(label: action!, onTap: onAction),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: sf(26, weight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                body,
+                textAlign: TextAlign.center,
+                style: sf(17, weight: FontWeight.w500, color: Palette.secondary, height: 1.3),
+              ),
+              if (action != null) ...[const SizedBox(height: 22), _Pill(label: action!, onTap: onAction)],
             ],
-          ]),
+          ),
         ),
       ),
     );
@@ -117,12 +126,15 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => CupertinoButton(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-        color: Palette.label,
-        borderRadius: BorderRadius.circular(100),
-        onPressed: onTap,
-        child: Text(label, style: sf(17, weight: FontWeight.w700, color: Palette.bg)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+    color: Palette.label,
+    borderRadius: BorderRadius.circular(100),
+    onPressed: onTap,
+    child: Text(
+      label,
+      style: sf(17, weight: FontWeight.w700, color: Palette.bg),
+    ),
+  );
 }
 
 class _Player extends StatelessWidget {
@@ -143,15 +155,20 @@ class _Player extends StatelessWidget {
 
     final artBox = GestureDetector(
       onTap: media.openPlayer,
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: const [BoxShadow(color: Color(0x88000000), blurRadius: 30, offset: Offset(0, 12))],
+      child: AnimatedScale(
+        scale: np.playing ? 1 : 0.9,
+        duration: Motion.duration(context, 600),
+        curve: Motion.curve,
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [BoxShadow(color: Color(0x88000000), blurRadius: 30, offset: Offset(0, 12))],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: art,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: art,
         ),
       ),
     );
@@ -160,15 +177,34 @@ class _Player extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(children: [
-          const Icon(CupertinoIcons.music_note, size: 14, color: Palette.secondary),
-          const SizedBox(width: 6),
-          Flexible(child: Text(np.app, maxLines: 1, overflow: TextOverflow.ellipsis, style: sf(14, weight: FontWeight.w600, color: Palette.secondary))),
-        ]),
+        Row(
+          children: [
+            const Icon(CupertinoIcons.music_note, size: 14, color: Palette.secondary),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                np.app,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: sf(14, weight: FontWeight.w600, color: Palette.secondary),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
-        Text(np.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: sf(30, weight: FontWeight.w800, height: 1.12)),
+        Text(
+          np.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: sf(30, weight: FontWeight.w800, height: 1.12),
+        ),
         const SizedBox(height: 4),
-        Text(np.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: sf(22, weight: FontWeight.w600, color: Palette.label.withValues(alpha: 0.6))),
+        Text(
+          np.artist,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: sf(22, weight: FontWeight.w600, color: Palette.label.withValues(alpha: 0.6)),
+        ),
         const SizedBox(height: 22),
         _Progress(np: np, accent: accent),
         const SizedBox(height: 18),
@@ -188,34 +224,43 @@ class _Player extends StatelessWidget {
     );
 
     final content = vertical
-        ? Column(mainAxisSize: MainAxisSize.min, children: [
-            ConstrainedBox(constraints: const BoxConstraints(maxWidth: 300, maxHeight: 300), child: artBox),
-            const SizedBox(height: 28),
-            SizedBox(width: 360, child: info),
-          ])
-        : Row(mainAxisSize: MainAxisSize.min, children: [
-            SizedBox(width: 260, height: 260, child: artBox),
-            const SizedBox(width: 32),
-            SizedBox(width: 340, child: info),
-          ]);
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ConstrainedBox(constraints: const BoxConstraints(maxWidth: 300, maxHeight: 300), child: artBox),
+              const SizedBox(height: 28),
+              SizedBox(width: 360, child: info),
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(width: 260, height: 260, child: artBox),
+              const SizedBox(width: 32),
+              SizedBox(width: 340, child: info),
+            ],
+          );
 
-    return Stack(fit: StackFit.expand, children: [
-      // Ambient blurred artwork
-      if (np.art != null)
-        Opacity(
-          opacity: 0.35,
-          child: ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(sigmaX: 60, sigmaY: 60, tileMode: TileMode.decal),
-            child: Image.memory(np.art!, fit: BoxFit.cover, gaplessPlayback: true),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Ambient blurred artwork
+        if (np.art != null)
+          Opacity(
+            opacity: 0.35,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 60, sigmaY: 60, tileMode: TileMode.decal),
+              child: Image.memory(np.art!, fit: BoxFit.cover, gaplessPlayback: true),
+            ),
+          ),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: FittedBox(fit: BoxFit.contain, child: content),
           ),
         ),
-      Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: FittedBox(fit: BoxFit.contain, child: content),
-        ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -227,24 +272,39 @@ class _Progress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (np.duration <= 0) return const SizedBox(height: 6);
-    return Column(children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: SizedBox(
-          height: 6,
-          child: Stack(children: [
-            Container(color: Palette.label.withValues(alpha: 0.18)),
-            FractionallySizedBox(widthFactor: np.progress, child: Container(color: Palette.label)),
-          ]),
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: SizedBox(
+            height: 6,
+            child: Stack(
+              children: [
+                Container(color: Palette.label.withValues(alpha: 0.18)),
+                FractionallySizedBox(
+                  widthFactor: np.progress,
+                  child: Container(color: Palette.label),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-      const SizedBox(height: 8),
-      Row(children: [
-        Text(_mmss(np.position), style: sf(13, weight: FontWeight.w600, color: Palette.secondary, tabular: true)),
-        const Spacer(),
-        Text('-${_mmss(np.duration - np.position)}', style: sf(13, weight: FontWeight.w600, color: Palette.secondary, tabular: true)),
-      ]),
-    ]);
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Text(
+              _mmss(np.position),
+              style: sf(13, weight: FontWeight.w600, color: Palette.secondary, tabular: true),
+            ),
+            const Spacer(),
+            Text(
+              '-${_mmss(np.duration - np.position)}',
+              style: sf(13, weight: FontWeight.w600, color: Palette.secondary, tabular: true),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -271,16 +331,22 @@ class _CtrlButtonState extends State<_CtrlButton> {
       onTap: widget.onTap,
       child: AnimatedScale(
         scale: _down ? 0.82 : 1,
-        duration: const Duration(milliseconds: 120),
+        duration: Motion.duration(context, 240),
+        curve: Motion.curve,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
+          duration: Motion.duration(context, 240),
+          curve: Motion.curve,
           width: widget.size * 1.8,
           height: widget.size * 1.8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _down ? Palette.label.withValues(alpha: 0.12) : const Color(0x00000000),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: _down ? Palette.label.withValues(alpha: 0.12) : const Color(0x00000000)),
+          child: AnimatedSwitcher(
+            duration: Motion.duration(context, 260),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(scale: animation, child: child),
+            ),
+            child: Icon(widget.icon, key: ValueKey(widget.icon), size: widget.size, color: Palette.label),
           ),
-          child: Icon(widget.icon, size: widget.size, color: Palette.label),
         ),
       ),
     );
