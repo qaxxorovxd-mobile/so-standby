@@ -130,7 +130,8 @@ class _SettingsSheet extends StatelessWidget {
                         icon: CupertinoIcons.bell_fill,
                         tint: Accents.pink,
                         footer:
-                            'New notifications appear while StandBy is open. Enable Notification Access below. '
+                            'While StandBy is open, its banners replace matching notifications in the system shade. '
+                            'Messages remain in their source apps. Enable Notification Access below. '
                             'Message text stays hidden while your phone is locked. Silent and Do Not Disturb notifications stay quiet.',
                         children: [
                           _SwitchRow(
@@ -182,7 +183,7 @@ class _SettingsSheet extends StatelessWidget {
                       const SizedBox(height: 12),
                       Center(
                         child: Text(
-                          'So StandBy · 1.4.0',
+                          'So StandBy · 1.4.1',
                           style: sf(13, weight: FontWeight.w600, color: Palette.tertiary),
                         ),
                       ),

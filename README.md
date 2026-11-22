@@ -54,10 +54,12 @@ New, alerting notifications appear as an animated glass capsule while StandBy is
 Enable **Settings → Notifications → Notification Access** once. The same Android permission also enables media controls. Notification animations and message previews can be switched off independently; **Preview Notification** lets you try the animation without receiving a message.
 
 - Message text is always hidden on a locked phone. Secret notifications are not shown.
+- While StandBy is open and notification animations are enabled, eligible notifications are removed from Android's shade before their in-app banners appear. Their messages remain in the source apps. Android may briefly show its heads-up surface before the listener receives the notification; the in-app animation waits for removal so they do not expand together.
+- Tapping the in-app banner still opens the message. Leaving StandBy, opening settings or disabling notification animations leaves new system notifications alone. Calls, alarms, full-screen alerts and non-dismissible notifications remain system-managed.
 - Silent, ongoing, grouped summary and media playback notifications do not trigger banners; Do Not Disturb is respected.
 - Bursts are limited to three waiting cards, and updates replace matching notifications. Old notifications are never replayed when returning to StandBy.
 - Night Mode uses a dim red presentation. The system's reduced-motion preference removes entrance and exit movement.
-- Notification content is held only in memory while displayed or queued, and is cleared when leaving StandBy.
+- Notification content and tap actions are held only in a bounded memory cache for up to one minute, and are cleared when leaving StandBy.
 
 ### Pages (swipe sideways)
 
