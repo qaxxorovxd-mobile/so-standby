@@ -100,7 +100,31 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
       sv.weather.refresh();
       sv.media.checkAccess();
       _powerSub = sv.power.events.listen(_onCharge);
+      unawaited(_explainNotificationFocus());
     });
+  }
+
+  Future<void> _explainNotificationFocus() async {
+    if (!_s.notificationAnimation || _s.getString('focusExplained') != null) return;
+    final status = await NotificationService.focusStatus();
+    if (!mounted || !_foreground || _settingsOpen || _charge != null || !status.supported || status.access) return;
+    _s.setString('focusExplained', '1');
+    final open = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Only StandBy banners'),
+        content: const Text(
+          'Allow Do Not Disturb access for So StandBy to stop system pop-ups before they appear. '
+          'Message sounds are silenced while StandBy is open. Calls and alarms can still ring. '
+          'You can also enable this in Settings → Notifications → StandBy Focus.',
+        ),
+        actions: [
+          CupertinoDialogAction(onPressed: () => Navigator.pop(context, false), child: const Text('Later')),
+          CupertinoDialogAction(onPressed: () => Navigator.pop(context, true), child: const Text('Open Settings')),
+        ],
+      ),
+    );
+    if (open == true && mounted) await NotificationService.openFocusSettings();
   }
 
   void _onCharge(ChargeEvent e) {

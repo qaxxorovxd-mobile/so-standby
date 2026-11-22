@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart' show showModalBottomSheet;
 import '../core/settings.dart';
 import '../core/clock.dart';
 import '../widgets/ios_surface.dart';
+import '../widgets/notification_focus_setup.dart';
 import '../core/style.dart';
 import '../core/services_scope.dart';
 import '../services/power.dart';
@@ -130,9 +131,10 @@ class _SettingsSheet extends StatelessWidget {
                         icon: CupertinoIcons.bell_fill,
                         tint: Accents.pink,
                         footer:
-                            'While StandBy is open, its banners replace matching notifications in the system shade. '
-                            'Messages remain in their source apps. Enable Notification Access below. '
-                            'Message text stays hidden while your phone is locked. Silent and Do Not Disturb notifications stay quiet.',
+                            'Enable Notification Access and StandBy Focus. Focus uses Do Not Disturb to silence message sounds '
+                            'and block system pop-ups while StandBy is open. Calls and alarms can still ring. '
+                            'Notifications stay in the system shade. Without Focus, Android handles notifications. '
+                            'Android 10 or later is required; apps allowed to bypass Do Not Disturb may still show system alerts.',
                         children: [
                           _SwitchRow(
                             label: 'Notification Animation',
@@ -146,6 +148,7 @@ class _SettingsSheet extends StatelessWidget {
                           ),
                           _NavRow(label: 'Preview Notification', onTap: () => Navigator.of(context).pop(true)),
                           _NavRow(label: 'Notification Access', onTap: () => Services.of(context).media.openAccessSettings()),
+                          const NotificationFocusSetup(),
                         ],
                       ),
                       _Group(
@@ -183,7 +186,7 @@ class _SettingsSheet extends StatelessWidget {
                       const SizedBox(height: 12),
                       Center(
                         child: Text(
-                          'So StandBy · 1.4.1',
+                          'So StandBy · 1.4.2',
                           style: sf(13, weight: FontWeight.w600, color: Palette.tertiary),
                         ),
                       ),

@@ -56,6 +56,7 @@ class MainActivity : FlutterActivity() {
         MediaListenerService.foreground = false
         MediaListenerService.enabled = false
         MediaListenerService.onEvent = null
+        FocusSession.update(this, false)
         powerReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
         powerReceiver = null
         super.onDestroy()
@@ -82,6 +83,13 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
                 "open" -> result.success(MediaListenerService.instance?.openNotification(call.argument<String>("key") ?: "") ?: false)
+                "focusStatus" -> result.success(FocusSession.status(this))
+                "openFocusSettings" -> {
+                    try {
+                        startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+                        result.success(true)
+                    } catch (_: Exception) { result.success(false) }
+                }
                 else -> result.notImplemented()
             }
         }

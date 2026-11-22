@@ -89,6 +89,31 @@ class NotificationService {
   static const _actions = MethodChannel('so_standby/notification_actions');
   StreamSubscription<dynamic>? _subscription;
 
+  static Future<NotificationFocusStatus> focusStatus() async {
+    try {
+      final data = await _actions.invokeMapMethod<String, dynamic>('focusStatus');
+      return NotificationFocusStatus(
+        supported: data?['supported'] == true,
+        access: data?['access'] == true,
+        state: data?['state'] as String? ?? 'idle',
+      );
+    } on PlatformException catch (_) {
+      return const NotificationFocusStatus();
+    } on MissingPluginException catch (_) {
+      return const NotificationFocusStatus();
+    }
+  }
+
+  static Future<bool> openFocusSettings() async {
+    try {
+      return await _actions.invokeMethod<bool>('openFocusSettings') ?? false;
+    } on PlatformException catch (_) {
+      return false;
+    } on MissingPluginException catch (_) {
+      return false;
+    }
+  }
+
   void listen(void Function(Map<Object?, Object?> event) onEvent) {
     _subscription = _events.receiveBroadcastStream().listen((event) {
       if (event is Map) onEvent(Map<Object?, Object?>.from(event));
@@ -115,5 +140,22 @@ class NotificationService {
   void dispose() {
     _subscription?.cancel();
     unawaited(configure(enabled: false, previews: false));
+  }
+}
+
+class NotificationFocusStatus {
+  const NotificationFocusStatus({this.supported = false, this.access = false, this.state = 'idle'});
+  final bool supported, access;
+  final String state;
+
+  String get label {
+    if (!supported) return 'Requires Android 10 or later';
+    if (!access) return 'Allow Do Not Disturb access';
+    return switch (state) {
+      'active' => 'Active in StandBy',
+      'otherDnd' => 'Paused by another Do Not Disturb mode',
+      'error' => 'Could not start. Check Android settings',
+      _ => 'Ready for StandBy',
+    };
   }
 }

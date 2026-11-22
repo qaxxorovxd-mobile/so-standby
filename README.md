@@ -51,15 +51,17 @@ You can preview both animations, or turn the feature off, in **Settings → Char
 
 New, alerting notifications appear as an animated glass capsule while StandBy is open. The capsule expands into a message card, stays for six seconds, then folds away. Swipe up or sideways, or use the close button, to dismiss the banner. Tap an actionable notification to open its source app.
 
-Enable **Settings → Notifications → Notification Access** once. The same Android permission also enables media controls. Notification animations and message previews can be switched off independently; **Preview Notification** lets you try the animation without receiving a message.
+Enable **Settings → Notifications → Notification Access** and **StandBy Focus**. Focus requires Android 10+ and Android's **Do Not Disturb access** for So StandBy. A one-time setup prompt links to that permission. Notification animations and message previews can be switched off independently; **Preview Notification** works without a real message.
 
+- Focus creates a temporary, app-owned automatic DND rule before notifications arrive. It blocks message heads-up banners and message sounds; calls, repeat callers, alarms, media and system sounds remain allowed. Notifications remain in Android's shade.
+- In-app banners are shown only when Android's ranking confirms that the notification's peeking effect was suppressed. Without access, on older Android versions, while Focus is starting, or for channels that bypass DND, Android handles presentation without a second in-app banner.
+- Existing DND prevents Focus from starting. If an overlapping mode makes the consolidated policy more restrictive, in-app banners stop. User rules are never removed or rewritten.
+- Leaving StandBy, opening settings, charging animations, disabling notification animations, or disconnecting notification access releases the rule. A separate bound service releases it when the UI process disconnects; stale app-owned rules are cleaned on the next session.
 - Message text is always hidden on a locked phone. Secret notifications are not shown.
-- While StandBy is open and notification animations are enabled, eligible notifications are removed from Android's shade before their in-app banners appear. Their messages remain in the source apps. Android may briefly show its heads-up surface before the listener receives the notification; the in-app animation waits for removal so they do not expand together.
-- Tapping the in-app banner still opens the message. Leaving StandBy, opening settings or disabling notification animations leaves new system notifications alone. Calls, alarms, full-screen alerts and non-dismissible notifications remain system-managed.
-- Silent, ongoing, grouped summary and media playback notifications do not trigger banners; Do Not Disturb is respected.
+- Silent, ongoing, grouped summary, media, call and alarm notifications do not trigger in-app banners.
 - Bursts are limited to three waiting cards, and updates replace matching notifications. Old notifications are never replayed when returning to StandBy.
 - Night Mode uses a dim red presentation. The system's reduced-motion preference removes entrance and exit movement.
-- Notification content and tap actions are held only in a bounded memory cache for up to one minute, and are cleared when leaving StandBy.
+- Notification content is held only in memory while displayed or queued, and is cleared when leaving StandBy.
 
 ### Pages (swipe sideways)
 
@@ -100,7 +102,8 @@ Digital · Analog · Solar · Float · Flip · Glow · Word Clock · Dot Matrix 
 On first launch, So StandBy asks for:
 
 - **Location**, to show weather for your city. You can type a city in Settings instead.
-- **Notification access**, so the app can read and control the active media session for the Now Playing page.
+- **Notification access**, for the Now Playing media controls and in-app notification banners.
+- **Do Not Disturb access**, for StandBy Focus to block system message pop-ups while StandBy is open (Android 10+).
 
 Nothing is collected or uploaded. The only network calls are to Open‑Meteo, to fetch the forecast.
 
