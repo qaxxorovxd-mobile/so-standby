@@ -60,6 +60,12 @@ class AppSettings extends ChangeNotifier {
   bool get chargeAnimation => _p.getBool('chargeAnim') ?? true;
   set chargeAnimation(bool v) => _set('chargeAnim', v);
 
+  bool get notificationAnimation => _p.getBool('notificationAnimation') ?? true;
+  set notificationAnimation(bool v) => _set('notificationAnimation', v);
+
+  bool get notificationPreviews => _p.getBool('notificationPreviews') ?? true;
+  set notificationPreviews(bool v) => _set('notificationPreviews', v);
+
   bool get burnIn => _p.getBool('burnIn') ?? true;
   set burnIn(bool v) => _set('burnIn', v);
 
@@ -105,10 +111,8 @@ class AppSettings extends ChangeNotifier {
 class SettingsScope extends InheritedNotifier<AppSettings> {
   const SettingsScope({super.key, required AppSettings settings, required super.child}) : super(notifier: settings);
 
-  static AppSettings of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<SettingsScope>()!.notifier!;
+  static AppSettings of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<SettingsScope>()!.notifier!;
 
   /// Non-subscribing lookup (safe in initState).
-  static AppSettings read(BuildContext context) =>
-      context.getInheritedWidgetOfExactType<SettingsScope>()!.notifier!;
+  static AppSettings read(BuildContext context) => context.getInheritedWidgetOfExactType<SettingsScope>()!.notifier!;
 }

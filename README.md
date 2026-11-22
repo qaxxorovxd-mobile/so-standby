@@ -47,6 +47,18 @@ You can preview both animations, or turn the feature off, in **Settings → Char
   <img src="docs/screenshots/charging-wireless.jpg" width="49%" />
 </p>
 
+### Notification banners
+
+New, alerting notifications appear as an animated glass capsule while StandBy is open. The capsule expands into a message card, stays for six seconds, then folds away. Swipe up or sideways, or use the close button, to dismiss the banner. Tap an actionable notification to open its source app.
+
+Enable **Settings → Notifications → Notification Access** once. The same Android permission also enables media controls. Notification animations and message previews can be switched off independently; **Preview Notification** lets you try the animation without receiving a message.
+
+- Message text is always hidden on a locked phone. Secret notifications are not shown.
+- Silent, ongoing, grouped summary and media playback notifications do not trigger banners; Do Not Disturb is respected.
+- Bursts are limited to three waiting cards, and updates replace matching notifications. Old notifications are never replayed when returning to StandBy.
+- Night Mode uses a dim red presentation. The system's reduced-motion preference removes entrance and exit movement.
+- Notification content is held only in memory while displayed or queued, and is cleared when leaving StandBy.
+
 ### Pages (swipe sideways)
 
 | # | Page | # | Page |

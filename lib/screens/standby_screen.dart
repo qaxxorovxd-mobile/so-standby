@@ -10,6 +10,8 @@ import '../core/services_scope.dart';
 import '../core/settings.dart';
 import '../core/style.dart';
 import '../services/power.dart';
+import '../services/notifications.dart';
+import '../widgets/notification_banner.dart';
 import '../widgets/analog_clock.dart';
 import '../widgets/charging_overlay.dart';
 import '../widgets/tiles.dart';
@@ -37,6 +39,34 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
   Timer? _chromeTimer;
   late AppSettings _s;
 
+  final _notificationService = NotificationService();
+  final _notices = NoticeQueue();
+  bool _foreground = true;
+  bool _settingsOpen = false;
+
+  bool get _canNotify => _foreground && !_settingsOpen && _charge == null && _s.notificationAnimation;
+
+  void _configureNotifications() {
+    if (!_canNotify) _notices.clear();
+    // Remove already-visible message text immediately when previews are disabled.
+    if (!_s.notificationPreviews) _notices.clear();
+    unawaited(_notificationService.configure(enabled: _canNotify, previews: _s.notificationPreviews));
+  }
+
+  void _onNotification(Map<Object?, Object?> event) {
+    if (!mounted) return;
+    switch (event['type']) {
+      case 'clear':
+        _notices.clear();
+      case 'removed':
+        _notices.remove(event['key'] as String? ?? '');
+      case 'posted':
+        if (_canNotify && (ModalRoute.of(context)?.isCurrent ?? false)) {
+          _notices.add(StandbyNotice.fromMap(event));
+        }
+    }
+  }
+
   // Charging animation
   static const _batteryPage = 8;
   StreamSubscription<ChargeEvent>? _powerSub;
@@ -55,6 +85,9 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _applyWakelock();
     _s.addListener(_applyWakelock);
+    _s.addListener(_configureNotifications);
+    _notificationService.listen(_onNotification);
+    _configureNotifications();
     if (_s.getString('hintShown') == null) {
       _hint = true;
       _s.setString('hintShown', '1');
@@ -85,6 +118,7 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
       _back = false;
       _charge = e;
     });
+    _configureNotifications();
   }
 
   void _onChargeDone() {
@@ -93,6 +127,7 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
       _charge = null;
       _back = _returnTo != null;
     });
+    _configureNotifications();
     if (_back) {
       _backTimer = Timer(const Duration(seconds: 3), () {
         if (mounted) setState(() => _back = false);
@@ -119,6 +154,8 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _configureNotifications();
     if (state == AppLifecycleState.resumed) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       final sv = Services.of(context);
@@ -132,6 +169,9 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _s.removeListener(_applyWakelock);
+    _s.removeListener(_configureNotifications);
+    _notificationService.dispose();
+    _notices.dispose();
     _chromeTimer?.cancel();
     _backTimer?.cancel();
     _powerSub?.cancel();
@@ -151,7 +191,16 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
     HapticFeedback.mediumImpact();
     _chromeTimer?.cancel();
     setState(() => _chrome = false);
-    await showSettingsSheet(context);
+    _settingsOpen = true;
+    _notices.clear();
+    _configureNotifications();
+    final previewNotification = await showSettingsSheet(context);
+    if (!mounted) return;
+    _settingsOpen = false;
+    _configureNotifications();
+    if (previewNotification == true && _foreground && _charge == null) {
+      _notices.add(StandbyNotice.preview());
+    }
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
@@ -339,6 +388,29 @@ class _StandbyScreenState extends State<StandbyScreen> with WidgetsBindingObserv
                           ),
                         ),
                       ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: ListenableBuilder(
+                      listenable: _notices,
+                      builder: (context, _) {
+                        final notice = _notices.current;
+                        if (notice == null) return const SizedBox.shrink();
+                        return NotificationBanner(
+                          key: ValueKey(notice.key),
+                          notice: notice,
+                          accent: s.accent,
+                          night: night,
+                          pendingCount: _notices.pendingCount,
+                          onDismiss: () {
+                            if (_notices.current?.key == notice.key) _notices.advance();
+                          },
+                          onOpen: () => _notificationService.open(notice.key),
+                        );
+                      },
                     ),
                   ),
                 ],

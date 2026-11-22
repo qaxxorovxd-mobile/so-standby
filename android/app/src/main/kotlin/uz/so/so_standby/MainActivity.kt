@@ -35,6 +35,17 @@ class MainActivity : FlutterActivity() {
 
     private var powerReceiver: BroadcastReceiver? = null
 
+    override fun onResume() {
+        super.onResume()
+        MediaListenerService.foreground = true
+    }
+
+    override fun onPause() {
+        MediaListenerService.foreground = false
+        MediaListenerService.onEvent?.invoke(mapOf("type" to "clear"))
+        super.onPause()
+    }
+
     @Suppress("DEPRECATION")
     private fun displayRotation(): Int = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) display?.rotation ?: 0
@@ -42,6 +53,9 @@ class MainActivity : FlutterActivity() {
     } catch (e: Exception) { 0 }
 
     override fun onDestroy() {
+        MediaListenerService.foreground = false
+        MediaListenerService.enabled = false
+        MediaListenerService.onEvent = null
         powerReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
         powerReceiver = null
         super.onDestroy()
@@ -49,6 +63,28 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, "so_standby/notifications").setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                    MediaListenerService.onEvent = { event -> events.success(event) }
+                }
+                override fun onCancel(arguments: Any?) {
+                    MediaListenerService.onEvent = null
+                    MediaListenerService.enabled = false
+                }
+            }
+        )
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "so_standby/notification_actions").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "configure" -> {
+                    MediaListenerService.enabled = call.argument<Boolean>("enabled") ?: false
+                    MediaListenerService.showPreviews = call.argument<Boolean>("previews") ?: true
+                    result.success(null)
+                }
+                "open" -> result.success(MediaListenerService.instance?.openNotification(call.argument<String>("key") ?: "") ?: false)
+                else -> result.notImplemented()
+            }
+        }
         // Power events: plug type (0 none, 1 AC, 2 USB, 4 wireless, 8 dock), level, display rotation.
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, "so_standby/power").setStreamHandler(
             object : EventChannel.StreamHandler {

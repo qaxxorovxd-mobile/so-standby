@@ -111,8 +111,8 @@ class L10n {
       'Превратите телефон в красивые часы,\nпогоду и медиа-экран во время зарядки.');
   String get permLocationTitle => _t('Joylashuv', 'Location', 'Геопозиция');
   String get permLocationBody => _t('Shahringizdagi ob-havoni ko\'rsatish uchun', 'To show weather for your city', 'Чтобы показывать погоду в вашем городе');
-  String get permMediaTitle => _t('Media boshqaruvi', 'Media Controls', 'Управление медиа');
-  String get permMediaBody => _t('Ijro etilayotgan musiqani ko\'rsatish va boshqarish uchun', 'To show and control what\'s playing', 'Чтобы показывать и управлять музыкой');
+  String get permMediaTitle => _t('Media boshqaruvi', 'Notifications & Media', 'Управление медиа');
+  String get permMediaBody => _t('Ijro etilayotgan musiqani ko\'rsatish va boshqarish uchun', 'For notification banners and music controls', 'Чтобы показывать и управлять музыкой');
   String get granted => _t('Yoqilgan', 'On', 'Вкл');
   String get continueBtn => _t('Davom etish', 'Continue', 'Продолжить');
   String get later => _t('Keyinroq', 'Not Now', 'Позже');

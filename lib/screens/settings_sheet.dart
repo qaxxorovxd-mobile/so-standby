@@ -11,8 +11,8 @@ import '../services/power.dart';
 import '../services/weather.dart';
 import 'onboarding_screen.dart';
 
-Future<void> showSettingsSheet(BuildContext context) {
-  return showModalBottomSheet(
+Future<bool?> showSettingsSheet(BuildContext context) {
+  return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -126,6 +126,28 @@ class _SettingsSheet extends StatelessWidget {
                         ],
                       ),
                       _Group(
+                        title: 'Notifications',
+                        icon: CupertinoIcons.bell_fill,
+                        tint: Accents.pink,
+                        footer:
+                            'New notifications appear while StandBy is open. Enable Notification Access below. '
+                            'Message text stays hidden while your phone is locked. Silent and Do Not Disturb notifications stay quiet.',
+                        children: [
+                          _SwitchRow(
+                            label: 'Notification Animation',
+                            value: s.notificationAnimation,
+                            onChanged: (v) => s.notificationAnimation = v,
+                          ),
+                          _SwitchRow(
+                            label: 'Show Message Previews',
+                            value: s.notificationPreviews,
+                            onChanged: (v) => s.notificationPreviews = v,
+                          ),
+                          _NavRow(label: 'Preview Notification', onTap: () => Navigator.of(context).pop(true)),
+                          _NavRow(label: 'Notification Access', onTap: () => Services.of(context).media.openAccessSettings()),
+                        ],
+                      ),
+                      _Group(
                         title: 'Charging',
                         icon: CupertinoIcons.bolt_fill,
                         tint: Accents.green,
@@ -160,7 +182,7 @@ class _SettingsSheet extends StatelessWidget {
                       const SizedBox(height: 12),
                       Center(
                         child: Text(
-                          'So StandBy · 1.3.1',
+                          'So StandBy · 1.4.0',
                           style: sf(13, weight: FontWeight.w600, color: Palette.tertiary),
                         ),
                       ),
